@@ -40,7 +40,7 @@ struct jhn_gen_s {
 };
 
 int
-jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...)
+jhn_gen_config(jhn_gen_t *g, jhn_gen_option_t opt, ...)
 {
     int rv = 1;
     va_list ap;
@@ -197,7 +197,7 @@ jhn_gen_free(jhn_gen_t *g)
         g->print(g->ctx, "\n", 1);                  \
 } while (0)
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_integer(jhn_gen_t *g, long long int number)
 {
     char i[32];
@@ -215,7 +215,7 @@ jhn_gen_integer(jhn_gen_t *g, long long int number)
 #define isinf !_finite
 #endif
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_double(jhn_gen_t *g, double number)
 {
     char i[32];
@@ -236,7 +236,7 @@ jhn_gen_double(jhn_gen_t *g, double number)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_number(jhn_gen_t *g, const char *s, size_t l)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -246,7 +246,7 @@ jhn_gen_number(jhn_gen_t *g, const char *s, size_t l)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_string(jhn_gen_t *g, const char *str, size_t len)
 {
     // if validation is enabled, check that the string is valid utf8
@@ -266,7 +266,7 @@ jhn_gen_string(jhn_gen_t *g, const char *str, size_t len)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_null(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -276,7 +276,7 @@ jhn_gen_null(jhn_gen_t *g)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_bool(jhn_gen_t *g, int boolean)
 {
 	ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -290,7 +290,7 @@ jhn_gen_bool(jhn_gen_t *g, int boolean)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_map_open(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -305,7 +305,7 @@ jhn_gen_map_open(jhn_gen_t *g)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_map_close(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE;
@@ -321,7 +321,7 @@ jhn_gen_map_close(jhn_gen_t *g)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_array_open(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -335,7 +335,7 @@ jhn_gen_array_open(jhn_gen_t *g)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_array_close(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE;
@@ -350,7 +350,7 @@ jhn_gen_array_close(jhn_gen_t *g)
     return jhn_gen_status_ok;
 }
 
-jhn_gen_status
+jhn_gen_status_t
 jhn_gen_get_buf(jhn_gen_t *g, const char **buf, size_t *len)
 {
     if (g->print != (jhn_print_t)&jhn__buf_append) {

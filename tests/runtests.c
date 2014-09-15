@@ -111,7 +111,7 @@ static int test_jhn_end_array(void *ctx)
     return 1;
 }
 
-static jhn_parser_callbacks callbacks = {
+static jhn_parser_callbacks_t callbacks = {
     test_jhn_null,
     test_jhn_boolean,
     test_jhn_integer,
@@ -149,7 +149,7 @@ main(int argc, char ** argv)
     static char * file_data = NULL;
     FILE *file;
     size_t buf_size = BUF_SIZE;
-    jhn_parser_status stat;
+    jhn_parser_status_t stat;
     size_t rd;
     int i, j;
 

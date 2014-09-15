@@ -32,7 +32,7 @@ typedef enum {
 } jhn_state;
 
 struct jhn_parser_s {
-    const jhn_parser_callbacks *callbacks;
+    const jhn_parser_callbacks_t *callbacks;
     void *ctx;
     jhn_lexer_t *lexer;
     const char *parse_error;
@@ -176,10 +176,10 @@ render_error_string(jhn_parser_t *hand, const char *json_text,
 } while (0)
 
 
-static jhn_parser_status
+static jhn_parser_status_t
 do_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 {
-    jhn_tok tok;
+    jhn_tok_t tok;
     const char * buf;
     size_t bufLen;
     size_t * offset = &(hand->bytes_consumed);
@@ -488,10 +488,10 @@ around_again:
     return jhn_parser_status_error;
 }
 
-static jhn_parser_status
+static jhn_parser_status_t
 do_finish(jhn_parser_t *hand)
 {
-    jhn_parser_status stat;
+    jhn_parser_status_t stat;
     stat = do_parse(hand, " ",1);
 
     if (stat != jhn_parser_status_ok) {
@@ -518,7 +518,7 @@ do_finish(jhn_parser_t *hand)
 }
 
 const char *
-jhn_parser_status_to_string(jhn_parser_status stat)
+jhn_parser_status_to_string(jhn_parser_status_t stat)
 {
     switch (stat) {
     case jhn_parser_status_ok:
@@ -533,7 +533,7 @@ jhn_parser_status_to_string(jhn_parser_status stat)
 }
 
 jhn_parser_t *
-jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
+jhn_parser_alloc(const jhn_parser_callbacks_t *callbacks,
                  jhn_alloc_funcs_t *afs, void *ctx)
 {
     jhn_parser_t *hand = NULL;
@@ -603,10 +603,10 @@ jhn_parser_free(jhn_parser_t *handle)
     }
 }
 
-jhn_parser_status
+jhn_parser_status_t
 jhn_parser_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 {
-    jhn_parser_status status;
+    jhn_parser_status_t status;
 
     /* lazy allocation of the lexer */
     if (hand->lexer == NULL) {
@@ -620,7 +620,7 @@ jhn_parser_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 }
 
 
-jhn_parser_status
+jhn_parser_status_t
 jhn_parser_finish(jhn_parser_t *hand)
 {
     /* The lexer is lazy allocated in the first call to parse.  if parse is
@@ -631,8 +631,8 @@ jhn_parser_finish(jhn_parser_t *hand)
      * (multiple values, partial values, etc). */
     if (hand->lexer == NULL) {
         hand->lexer = jhn_lexer_alloc(&(hand->alloc),
-                                     hand->flags & jhn_allow_comments,
-                                     !(hand->flags & jhn_dont_validate_strings));
+                                      hand->flags & jhn_allow_comments,
+                                      !(hand->flags & jhn_dont_validate_strings));
     }
 
     return do_finish(hand);

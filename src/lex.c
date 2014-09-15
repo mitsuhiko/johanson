@@ -9,7 +9,7 @@
 
 #ifdef JHN_LEXER_DEBUG
 static const char *
-tokToStr(jhn_tok tok)
+tokToStr(jhn_tok_t tok)
 {
     switch (tok) {
     case jhn_tok_bool: return "bool";
@@ -176,7 +176,7 @@ static const char char_lookup_table[256] =
  *  invalid utf8 */
 #define UTF8_CHECK_EOF if (*offset >= length) { return jhn_tok_eof; }
 
-static jhn_tok
+static jhn_tok_t
 jhn_lexer_utf8_char(jhn_lexer_t *lexer, const char *json_text,
                   size_t length, size_t *offset,
                   char chr)
@@ -250,11 +250,11 @@ jhn_string_scan(const char * buf, size_t len, int utf8check)
     return skip;
 }
 
-static jhn_tok
+static jhn_tok_t
 jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
                 size_t length, size_t * offset)
 {
-    jhn_tok tok = jhn_tok_error;
+    jhn_tok_t tok = jhn_tok_error;
     int hasEscapes = 0;
 
     for (;;) {
@@ -328,7 +328,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
         }
         /* when in validate UTF8 mode we need to do some extra work */
         else if (lexer->validate_utf8) {
-            jhn_tok t = jhn_lexer_utf8_char(lexer, json_text, length,
+            jhn_tok_t t = jhn_lexer_utf8_char(lexer, json_text, length,
                                           offset, cur_chr);
 
             if (t == jhn_tok_eof) {
@@ -353,7 +353,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
 
 #define RETURN_IF_EOF if (*offset >= length) return jhn_tok_eof;
 
-static jhn_tok
+static jhn_tok_t
 jhn_lexer_number(jhn_lexer_t *lexer, const char * json_text,
                 size_t length, size_t * offset)
 {
@@ -363,7 +363,7 @@ jhn_lexer_number(jhn_lexer_t *lexer, const char * json_text,
 
     char c;
 
-    jhn_tok tok = jhn_tok_integer;
+    jhn_tok_t tok = jhn_tok_integer;
 
     RETURN_IF_EOF;
     c = read_chr(lexer, json_text, offset);
@@ -440,13 +440,13 @@ jhn_lexer_number(jhn_lexer_t *lexer, const char * json_text,
     return tok;
 }
 
-static jhn_tok
+static jhn_tok_t
 jhn_lexer_comment(jhn_lexer_t *lexer, const char *json_text,
                 size_t length, size_t *offset)
 {
     char c;
 
-    jhn_tok tok = jhn_tok_comment;
+    jhn_tok_t tok = jhn_tok_comment;
 
     RETURN_IF_EOF;
     c = read_chr(lexer, json_text, offset);
@@ -481,12 +481,12 @@ jhn_lexer_comment(jhn_lexer_t *lexer, const char *json_text,
     return tok;
 }
 
-jhn_tok
+jhn_tok_t
 jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
              size_t length, size_t *offset,
              const char **out_buf, size_t *out_len)
 {
-    jhn_tok tok = jhn_tok_error;
+    jhn_tok_t tok = jhn_tok_error;
     char c;
     size_t start_off = *offset;
 
@@ -730,7 +730,7 @@ size_t jhn_lexer_current_char(jhn_lexer_t *lexer)
     return lexer->char_off;
 }
 
-jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
+jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
                        size_t length, size_t offset)
 {
     const char *out_buf;
@@ -738,7 +738,7 @@ jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
     size_t bufLen = jhn__buf_len(lexer->buf);
     size_t buf_off = lexer->buf_off;
     unsigned int buf_in_use = lexer->buf_in_use;
-    jhn_tok tok;
+    jhn_tok_t tok;
 
     tok = jhn_lexer_lex(lexer, json_text, length, &offset,
                         &out_buf, &out_len);

@@ -83,7 +83,7 @@ typedef enum {
     /* returned from jhn_gen_string() when the jhn_gen_validate_utf8
        option is enabled and an invalid was passed by client code. */
     jhn_gen_invalid_string
-} jhn_gen_status;
+} jhn_gen_status_t;
 
 typedef struct jhn_gen_s jhn_gen_t;
 
@@ -122,12 +122,12 @@ typedef enum {
        is useful when embedding JSON in HTML where it might otherwise be
        used to escape a script tag. */
     jhn_gen_escape_solidus = 0x10
-} jhn_gen_option;
+} jhn_gen_option_t;
 
 /* allow the modification of generator options subsequent to handle
    allocation (via jhn_alloc)
    \returns zero in case of errors, non-zero otherwise */
-JHN_API int jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...);
+JHN_API int jhn_gen_config(jhn_gen_t *g, jhn_gen_option_t opt, ...);
 
 /* allocate a generator handle.  The allocator functions can be left at NULL
    in which case the system malloc/realloc/free functions are used. */
@@ -143,28 +143,28 @@ JHN_API void jhn_gen_free(jhn_gen_t *handle);
    else you will get an error (jhn_gen_keys_must_be_strings).  Likewise you
    cannot use NaN/Infinity floats or you will get an error
    (jhn_gen_invalid_number). */
-JHN_API jhn_gen_status jhn_gen_integer(jhn_gen_t *hand, long long int number);
-JHN_API jhn_gen_status jhn_gen_double(jhn_gen_t *hand, double number);
-JHN_API jhn_gen_status jhn_gen_number(jhn_gen_t *hand,
-                                      const char *num,
-                                      size_t len);
-JHN_API jhn_gen_status jhn_gen_string(jhn_gen_t *hand,
-                                      const char *str,
-                                      size_t len);
-JHN_API jhn_gen_status jhn_gen_null(jhn_gen_t *hand);
-JHN_API jhn_gen_status jhn_gen_bool(jhn_gen_t *hand, int boolean);
-JHN_API jhn_gen_status jhn_gen_map_open(jhn_gen_t *hand);
-JHN_API jhn_gen_status jhn_gen_map_close(jhn_gen_t *hand);
-JHN_API jhn_gen_status jhn_gen_array_open(jhn_gen_t *hand);
-JHN_API jhn_gen_status jhn_gen_array_close(jhn_gen_t *hand);
+JHN_API jhn_gen_status_t jhn_gen_integer(jhn_gen_t *hand, long long int number);
+JHN_API jhn_gen_status_t jhn_gen_double(jhn_gen_t *hand, double number);
+JHN_API jhn_gen_status_t jhn_gen_number(jhn_gen_t *hand,
+                                        const char *num,
+                                        size_t len);
+JHN_API jhn_gen_status_t jhn_gen_string(jhn_gen_t *hand,
+                                        const char *str,
+                                        size_t len);
+JHN_API jhn_gen_status_t jhn_gen_null(jhn_gen_t *hand);
+JHN_API jhn_gen_status_t jhn_gen_bool(jhn_gen_t *hand, int boolean);
+JHN_API jhn_gen_status_t jhn_gen_map_open(jhn_gen_t *hand);
+JHN_API jhn_gen_status_t jhn_gen_map_close(jhn_gen_t *hand);
+JHN_API jhn_gen_status_t jhn_gen_array_open(jhn_gen_t *hand);
+JHN_API jhn_gen_status_t jhn_gen_array_close(jhn_gen_t *hand);
 
 /* access the null terminated generator buffer.  If incrementally
    outputing JSON, one should call jhn_gen_clear to clear the
    buffer.  This allows stream generation.  This is not useful at all
    if a custom print function is registered. */
-JHN_API jhn_gen_status jhn_gen_get_buf(jhn_gen_t *hand,
-                                       const char **buf,
-                                       size_t *len);
+JHN_API jhn_gen_status_t jhn_gen_get_buf(jhn_gen_t *hand,
+                                         const char **buf,
+                                         size_t *len);
 
 /* clear jhn's output buffer, but maintain all internal generation
    state.  This function will not "reset" the generator state, and is
@@ -194,11 +194,11 @@ typedef enum {
     /* An error occured during the parse.  Call jhn_parser_get_error for
        more information about the encountered error */
     jhn_parser_status_error
-} jhn_parser_status;
+} jhn_parser_status_t;
 
 /* attain a human readable, english, string for an error.  This error string
    is statically allocated. */
-JHN_API const char *jhn_parser_status_to_string(jhn_parser_status code);
+JHN_API const char *jhn_parser_status_to_string(jhn_parser_status_t code);
 
 typedef struct jhn_parser_s jhn_parser_t;
 
@@ -236,25 +236,23 @@ typedef struct {
     int (*jhn_double)(void *ctx, double double_val);
     /** A callback which passes the string representation of the number
      *  back to the client.  Will be used for all numbers when present */
-    int (*jhn_number)(void *ctx, const char *number_val,
-                      size_t number_len);
+    int (*jhn_number)(void *ctx, const char *number_val, size_t number_len);
 
     /** strings are returned as pointers into the JSON text when,
      * possible, as a result, they are _not_ null padded */
     int (*jhn_string)(void *ctx, const char *string_val, size_t string_len);
 
     int (*jhn_start_map)(void *ctx);
-    int (*jhn_map_key)(void *ctx, const char *key,
-                       size_t string_len);
+    int (*jhn_map_key)(void *ctx, const char *key, size_t string_len);
     int (*jhn_end_map)(void *ctx);
 
     int (*jhn_start_array)(void *ctx);
     int (*jhn_end_array)(void *ctx);
-} jhn_parser_callbacks;
+} jhn_parser_callbacks_t;
 
 /* allocate a parser handle.  The allocation functions can be left out in
    which case the system malloc/realloc/free functions are used. */
-JHN_API jhn_parser_t *jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
+JHN_API jhn_parser_t *jhn_parser_alloc(const jhn_parser_callbacks_t *callbacks,
                                        jhn_alloc_funcs_t *afs,
                                        void *ctx);
 
@@ -313,9 +311,9 @@ JHN_API void jhn_parser_free(jhn_parser_t *handle);
 /* Parse some json!
    json_text - a pointer to the UTF8 json text to be parsed
    length - the length, in bytes, of input text */
-JHN_API jhn_parser_status jhn_parser_parse(jhn_parser_t *hand,
-                                    const char *json_text,
-                                    size_t length);
+JHN_API jhn_parser_status_t jhn_parser_parse(jhn_parser_t *hand,
+                                             const char *json_text,
+                                             size_t length);
 
 /* Parse any remaining buffered json.
    Since jhn is a stream-based parser, without an explicit end of
@@ -323,7 +321,7 @@ JHN_API jhn_parser_status jhn_parser_parse(jhn_parser_t *hand,
    stream is valid or not.  For example, if "1" has been fed in,
    jhn can't know whether another digit is next or some character
    that would terminate the integer token. */
-JHN_API jhn_parser_status jhn_parser_finish(jhn_parser_t *hand);
+JHN_API jhn_parser_status_t jhn_parser_finish(jhn_parser_t *hand);
 
 /* get an error string describing the state of the parse.
 
@@ -371,7 +369,7 @@ typedef enum {
     jhn_tok_string,
     jhn_tok_string_with_escapes,
     jhn_tok_comment
-} jhn_tok;
+} jhn_tok_t;
 
 typedef struct jhn_lexer_s jhn_lexer_t;
 
@@ -404,13 +402,13 @@ JHN_API void jhn_lexer_free(jhn_lexer_t * lexer);
    This behavior is abstracted from client code except for the performance
    implications which require that the client choose a reasonable chunk
    size to get adequate performance. */
-JHN_API jhn_tok jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
-                              size_t length, size_t *offset,
-                              const char **out_buf, size_t *out_len);
+JHN_API jhn_tok_t jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
+                                size_t length, size_t *offset,
+                                const char **out_buf, size_t *out_len);
 
 /* have a peek at the next token, but don't move the lexer forward */
-JHN_API jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
-                               size_t length, size_t offset);
+JHN_API jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
+                                 size_t length, size_t offset);
 
 
 typedef enum {

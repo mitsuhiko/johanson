@@ -201,9 +201,10 @@ jhn_gen_status_t
 jhn_gen_integer(jhn_gen_t *g, long long int number)
 {
     char i[32];
+    size_t len;
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    sprintf(i, "%lld", number);
-    g->print(g->ctx, i, strlen(i));
+    len = sprintf(i, "%lld", number);
+    g->print(g->ctx, i, len);
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return jhn_gen_status_ok;
@@ -225,8 +226,7 @@ jhn_gen_double(jhn_gen_t *g, double number)
         return jhn_gen_invalid_number;
     }
     INSERT_SEP; INSERT_WHITESPACE;
-    sprintf(i, "%.20g", number);
-    len = strlen(i);
+    len = sprintf(i, "%.20g", number);
     if (strspn(i, "0123456789-") == len) {
         strcat(i, ".0");
     }

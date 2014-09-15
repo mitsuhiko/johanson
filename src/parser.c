@@ -83,7 +83,7 @@ parse_integer(const char *number, unsigned int length)
 
 static char *
 render_error_string(jhn_parser_t *hand, const char *json_text,
-                        size_t length, int verbose)
+                    size_t length, int verbose)
 {
     size_t offset = hand->bytes_consumed;
     char *str;

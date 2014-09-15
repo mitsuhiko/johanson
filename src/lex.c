@@ -710,13 +710,9 @@ jhn_lexer_error_to_string(jhn_lexer_error_t error)
 }
 
 
-/** allows access to more specific information about the lexical
- *  error when jhn_lexer_lex returns jhn_tok_error. */
 jhn_lexer_error_t
 jhn_lexer_get_error(jhn_lexer_t *lexer)
 {
-    if (lexer == NULL)
-        return (jhn_lexer_error_t)-1;
     return lexer->error;
 }
 

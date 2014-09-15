@@ -178,6 +178,8 @@ JHN_API void jhn_gen_clear(jhn_gen_t *hand);
    multiple JSON numbers without a separator, for instance, will result in
    ambiguous output)
 
+   A good separator is \n for instance.
+
    Note: this call will not clear jhn's output buffer.  This
    may be accomplished explicitly by calling jhn_gen_clear() */
 JHN_API void jhn_gen_reset(jhn_gen_t *hand, const char *sep);

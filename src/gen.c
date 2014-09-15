@@ -31,6 +31,7 @@ struct jhn_gen_s {
     unsigned int flags;
     unsigned int depth;
     const char *indent_string;
+    size_t indent_string_len;
     jhn_gen_state state[JHN_MAX_DEPTH];
     jhn_print_t print;
     void *ctx;
@@ -55,6 +56,7 @@ jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...)
         case jhn_gen_indent_string: {
             const char *indent = va_arg(ap, const char *);
             g->indent_string = indent;
+            g->indent_string_len = strlen(indent);
             break;
         }
         case jhn_gen_print_callback:
@@ -96,12 +98,13 @@ jhn_gen_alloc(const jhn_alloc_funcs_t *afs)
     g->print = (jhn_print_t)&jhn__buf_append;
     g->ctx = jhn__buf_alloc(&(g->alloc));
     g->indent_string = "  ";
+    g->indent_string_len = 2;
 
     return g;
 }
 
 void
-jhn_gen_reset(jhn_gen_t *g, const char * sep)
+jhn_gen_reset(jhn_gen_t *g, const char *sep)
 {
     g->depth = 0;
     memset((void *) &(g->state), 0, sizeof(g->state));
@@ -138,7 +141,7 @@ jhn_gen_free(jhn_gen_t *g)
             for (_i=0;_i<g->depth;_i++)                                 \
                 g->print(g->ctx,                                        \
                          g->indent_string,                              \
-                         (unsigned int)strlen(g->indent_string));       \
+                         g->indent_string_len);                         \
         }                                                               \
     }
 
@@ -192,7 +195,7 @@ jhn_gen_integer(jhn_gen_t *g, long long int number)
     char i[32];
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     sprintf(i, "%lld", number);
-    g->print(g->ctx, i, (unsigned int)strlen(i));
+    g->print(g->ctx, i, strlen(i));
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return jhn_gen_status_ok;
@@ -208,16 +211,18 @@ jhn_gen_status
 jhn_gen_double(jhn_gen_t *g, double number)
 {
     char i[32];
+    size_t len;
     ENSURE_VALID_STATE; ENSURE_NOT_KEY;
     if (isnan(number) || isinf(number)) {
         return jhn_gen_invalid_number;
     }
     INSERT_SEP; INSERT_WHITESPACE;
     sprintf(i, "%.20g", number);
-    if (strspn(i, "0123456789-") == strlen(i)) {
+    len = strlen(i);
+    if (strspn(i, "0123456789-") == len) {
         strcat(i, ".0");
     }
-    g->print(g->ctx, i, (unsigned int)strlen(i));
+    g->print(g->ctx, i, len);
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return jhn_gen_status_ok;
@@ -257,7 +262,7 @@ jhn_gen_status
 jhn_gen_null(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    g->print(g->ctx, "null", strlen("null"));
+    g->print(g->ctx, "null", 4);
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return jhn_gen_status_ok;
@@ -266,10 +271,12 @@ jhn_gen_null(jhn_gen_t *g)
 jhn_gen_status
 jhn_gen_bool(jhn_gen_t *g, int boolean)
 {
-    const char *val = boolean ? "true" : "false";
-
 	ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
-    g->print(g->ctx, val, (unsigned int)strlen(val));
+    if (boolean) {
+        g->print(g->ctx, "true", 4);
+    } else {
+        g->print(g->ctx, "false", 5);
+    }
     APPENDED_ATOM;
     FINAL_NEWLINE;
     return jhn_gen_status_ok;

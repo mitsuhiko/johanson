@@ -590,7 +590,7 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
             /* integer parsing wants to start from the beginning */
             unread_chr(lexer, offset);
             tok = jhn_lexer_number(lexer, (const char *)json_text,
-                                 length, offset);
+                                   length, offset);
             goto lexed;
         }
         case '/':
@@ -731,9 +731,9 @@ size_t jhn_lexer_current_char(jhn_lexer_t *lexer)
 }
 
 jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
-                     size_t length, size_t offset)
+                       size_t length, size_t offset)
 {
-    const char * out_buf;
+    const char *out_buf;
     size_t out_len;
     size_t bufLen = jhn__buf_len(lexer->buf);
     size_t buf_off = lexer->buf_off;
@@ -741,7 +741,7 @@ jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
     jhn_tok tok;
 
     tok = jhn_lexer_lex(lexer, json_text, length, &offset,
-                      &out_buf, &out_len);
+                        &out_buf, &out_len);
 
     lexer->buf_off = buf_off;
     lexer->buf_in_use = buf_in_use;

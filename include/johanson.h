@@ -1,17 +1,30 @@
 /* JOHANSON
    -- a simple, iterative JSON library for C for easy embedding  */
+
 #ifndef JOHANSON_H_INCLUDED
 #define JOHANSON_H_INCLUDED
 
-#include <stddef.h>
+/* we need stddef.h for this to work, but if that causes a problem you
+   can disable that include through JHN_NO_INCLUDES */
+#ifndef JHN_NO_INCLUDES
+#  include <stddef.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* msft dll export gunk.  To build a DLL on windows, you
-   must define WIN32, JHN_SHARED, and JHN_BUILD.  To use a shared
-   DLL, you must define JHN_SHARED and WIN32 */
+/* Johanson is a library that is meant for embedding into all kinds of
+   environments.  As a result we good care of all our external symbols.
+   All public symbols are prefixed with JHN_API.  If you do not define
+   that macro yourself we default it for you.
+
+   If you are on Windows (_WIN32) you can define JHN_SHARED to make it
+   default to a DLL import declspec.  If you further define JHN_BUILD
+   it becomes a DLL export declspec.
+
+   If the compiler is GCC or compatible, we put a default visibility
+   attribute around. */
 #ifndef JHN_API
 #  if (defined(_WIN32) || defined(WIN32)) && defined(JHN_SHARED)
 #    ifdef JHN_BUILD
@@ -28,19 +41,14 @@ extern "C" {
 #  endif
 #endif
 
-/* pointer to a malloc function, supporting client overriding memory
-   allocation routines */
+/* pointer to a malloc/free/realloc functions, supporting client overriding
+   memory allocation routines.  The ctx pointer passed to all functions is
+   specified on the jhn_alloc_funcs_t structure together with the function
+   pointers. */
 typedef void *(*jhn_malloc_func)(void *ctx, size_t sz);
-
-/* pointer to a free function, supporting client overriding memory
-   allocation routines */
 typedef void (*jhn_free_func)(void *ctx, void *ptr);
-
-/* pointer to a realloc function which can resize an allocation. */
 typedef void *(*jhn_realloc_func)(void *ctx, void *ptr, size_t sz);
 
-/* A structure which can be passed to jhn_*_alloc routines to allow the
-   client to specify memory allocation functions to be used. */
 typedef struct {
     jhn_malloc_func malloc_func;
     jhn_realloc_func realloc_func;
@@ -51,18 +59,20 @@ typedef struct {
 
 /* generator status codes */
 typedef enum {
-    /* no error */
+    /* no error, all good */
     jhn_gen_status_ok = 0,
     /* at a point where a map key is generated, a function other than
-       jhn_gen_string was called */
+       jhn_gen_string was called.  If you get this, you probably did
+      something wrong. */
     jhn_gen_keys_must_be_strings,
-    /* JHN's maximum generation depth was exceeded.  see
-       JHN_MAX_DEPTH in gen.c */
+    /* Johanson's maximum generation depth was exceeded.  see
+       JHN_MAX_DEPTH in gen.c.  This is an implementation detail that
+       might be lifted in the future. */
     jhn_max_depth_exceeded,
     /* A generator function (jhn_gen_XXX) was called while in an error
-       state */
+       state.  If you get this, you probably do something wrong. */
     jhn_gen_in_error_state,
-    /* A complete JSON document has been generated */
+    /* A complete JSON document has been generated. */
     jhn_gen_generation_complete,
     /* jhn_gen_double was passed an invalid floating point value
        (infinity or NaN). */
@@ -75,7 +85,6 @@ typedef enum {
     jhn_gen_invalid_string
 } jhn_gen_status;
 
-/* an opaque handle to a generator */
 typedef struct jhn_gen_s jhn_gen_t;
 
 /* a callback used for "printing" the results. */
@@ -85,28 +94,33 @@ typedef void (*jhn_print_t)(void *ctx, const char *str, size_t len);
    jhn_gen_config() along with option specific argument(s).  In general,
    all configuration parameters default to *off*. */
 typedef enum {
-    /** generate indented (beautiful) output */
+    /* generate indented (beautiful) output.  If this is enabled then
+       the jhn_gen_indent_string is used for indentation.  If this is
+       disabled (which is the default) no unnecessary whitespace is
+       generated after separators for instance. */
     jhn_gen_beautify = 0x01,
     /* Set an indent string which is used when jhn_gen_beautify
-      is enabled.  Maybe something like \\t or some number of
-      spaces.  The default is four spaces ' '. */
+       is enabled.  Maybe something like \t or some number of
+       spaces.  The default is four spaces ' '. */
     jhn_gen_indent_string = 0x02,
     /* Set a function and context argument that should be used to
        output generated json.  the function should conform to the
        jhn_print_t prototype while the context argument is a
        void * of your choosing.
-      
+
        example:
-         jhn_gen_config(g, jhn_gen_print_callback, myFunc, myVoidPtr); */
+         jhn_gen_config(g, jhn_gen_print_callback, func, ptr); */
     jhn_gen_print_callback = 0x04,
     /* Normally the generator does not validate that strings you
        pass to it via jhn_gen_string() are valid UTF8.  Enabling
        this option will cause it to do so. */
     jhn_gen_validate_utf8 = 0x08,
     /* the forward solidus (slash or '/' in human) is not required to be
-       escaped in json text.  By default, JHN will not escape it in the
-       iterest of saving bytes.  Setting this flag will cause JHN to
-       always escape '/' in generated JSON strings. */
+       escaped in json text.  By default, Johanson will not escape it in the
+       iterest of saving bytes.  Setting this flag will cause it to always
+       escape '/' in generated JSON strings.  The escaping of the solidus
+       is useful when embedding JSON in HTML where it might otherwise be
+       used to escape a script tag. */
     jhn_gen_escape_solidus = 0x10
 } jhn_gen_option;
 
@@ -115,17 +129,21 @@ typedef enum {
    \returns zero in case of errors, non-zero otherwise */
 JHN_API int jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...);
 
-/* allocate a generator handle */
+/* allocate a generator handle.  The allocator functions can be left at NULL
+   in which case the system malloc/realloc/free functions are used. */
 JHN_API jhn_gen_t *jhn_gen_alloc(const jhn_alloc_funcs_t *alloc_funcs);
 
-/* free a generator handle */
+/* free a previously allocated generator handle */
 JHN_API void jhn_gen_free(jhn_gen_t *handle);
 
-JHN_API jhn_gen_status jhn_gen_integer(jhn_gen_t *hand, long long int number);
+/* these functions can be used to generate an item for JSON.  They work
+   exactly as you would expect.  The only things you need to know are:
 
-/* generate a floating point number.  number may not be infinity or
-   NaN, as these have no representation in JSON.  In these cases the
-   generator will return 'jhn_gen_invalid_number' */
+   dictionary keys are generated with jhn_gen_string.  If you use anything
+   else you will get an error (jhn_gen_keys_must_be_strings).  Likewise you
+   cannot use NaN/Infinity floats or you will get an error
+   (jhn_gen_invalid_number). */
+JHN_API jhn_gen_status jhn_gen_integer(jhn_gen_t *hand, long long int number);
 JHN_API jhn_gen_status jhn_gen_double(jhn_gen_t *hand, double number);
 JHN_API jhn_gen_status jhn_gen_number(jhn_gen_t *hand,
                                       const char *num,
@@ -142,7 +160,8 @@ JHN_API jhn_gen_status jhn_gen_array_close(jhn_gen_t *hand);
 
 /* access the null terminated generator buffer.  If incrementally
    outputing JSON, one should call jhn_gen_clear to clear the
-   buffer.  This allows stream generation. */
+   buffer.  This allows stream generation.  This is not useful at all
+   if a custom print function is registered. */
 JHN_API jhn_gen_status jhn_gen_get_buf(jhn_gen_t *hand,
                                        const char **buf,
                                        size_t *len);
@@ -158,7 +177,7 @@ JHN_API void jhn_gen_clear(jhn_gen_t *hand);
    NULL means *no separation* of entites (clients beware, generating
    multiple JSON numbers without a separator, for instance, will result in
    ambiguous output)
- 
+
    Note: this call will not clear jhn's output buffer.  This
    may be accomplished explicitly by calling jhn_gen_clear() */
 JHN_API void jhn_gen_reset(jhn_gen_t *hand, const char *sep);
@@ -175,25 +194,29 @@ typedef enum {
     jhn_parser_status_error
 } jhn_parser_status;
 
-/* attain a human readable, english, string for an error */
+/* attain a human readable, english, string for an error.  This error string
+   is statically allocated. */
 JHN_API const char *jhn_parser_status_to_string(jhn_parser_status code);
 
-/* an opaque handle to a parser */
 typedef struct jhn_parser_s jhn_parser_t;
 
-/* jhn is an event driven parser.  this means as json elements are
+/* Johanson is an event driven parser.  this means as json elements are
    parsed, you are called back to do something with the data.  The
    functions in this table indicate the various events for which
    you will be called back.  Each callback accepts a "context"
    pointer, this is a void * that is passed into the jhn_parser_parse
    function which the client code may use to pass around context.
- 
+
+   For some very advanced situations the parser might not be good enough
+   for what you want to do.  In that case you can fall back to using the
+   lexer (jhn_lexer_t) directly.
+
    All callbacks return an integer.  If non-zero, the parse will
    continue.  If zero, the parse will be canceled and
    jhn_parser_status_client_cancelled will be returned from the parse.
- 
+
      A note about the handling of numbers:
- 
+
      jhn will only convert numbers that can be represented in a
      double or a 64 bit (long long) int.  All other numbers will
      be passed to the client in string form using the jhn_number
@@ -227,10 +250,11 @@ typedef struct {
     int (*jhn_end_array)(void *ctx);
 } jhn_parser_callbacks;
 
-/* allocate a parser handle */
+/* allocate a parser handle.  The allocation functions can be left out in
+   which case the system malloc/realloc/free functions are used. */
 JHN_API jhn_parser_t *jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
-                                           jhn_alloc_funcs_t *afs,
-                                           void *ctx);
+                                       jhn_alloc_funcs_t *afs,
+                                       void *ctx);
 
 
 /* configuration parameters for the parser, these may be passed to
@@ -240,7 +264,7 @@ typedef enum {
     /* Ignore javascript style comments present in
        JSON input.  Non-standard, but rather fun
        arguments: toggled off with integer zero, on otherwise.
-     
+
        example:
          jhn_config(h, jhn_allow_comments, 1); // turn comment support on */
     jhn_allow_comments = 0x01,
@@ -248,7 +272,7 @@ typedef enum {
        valid UTF8 and will emit a parse error if this is not so.  When set,
        this option makes parsing slightly more expensive (~7% depending
        on processor and compiler in use)
-      
+
        example:
          jhn_config(h, jhn_dont_validate_strings, 1); // disable utf8 checking */
     jhn_dont_validate_strings = 0x02,
@@ -274,8 +298,9 @@ typedef enum {
     jhn_allow_partial_values = 0x10
 } jhn_parser_option;
 
-/* allow the modification of parser options subsequent to handle
-   allocation (via jhn_alloc)
+/* allow the modification of parser options (any of the options mentioned
+   before).  Most useful ones are enabling of multiple values and enabling
+   of comments.
 
    returns zero in case of errors, non-zero otherwise */
 JHN_API int jhn_parser_config(jhn_parser_t *h, jhn_parser_option opt, ...);
@@ -299,23 +324,25 @@ JHN_API jhn_parser_status jhn_parser_parse(jhn_parser_t *hand,
 JHN_API jhn_parser_status jhn_parser_finish(jhn_parser_t *hand);
 
 /* get an error string describing the state of the parse.
- 
+
    If verbose is non-zero, the message will include the JSON
    text where the error occured, along with an arrow pointing to
    the specific char.
- 
+
    Returns A dynamically allocated string will be returned which should
-   be freed with jhn_free_error */
+   be freed with jhn_free_error (or by using the same free function as
+   when you registered the allocators). */
 JHN_API char *jhn_parser_get_error(jhn_parser_t *hand, int verbose,
                                    const char *json_text,
                                    size_t length);
 
-/* Get the amount of data consumed from the last chunk passed to JHN.
- 
+/* Get the amount of data consumed from the last chunk passed to
+   Johanson.
+
    In the case of a successful parse this can help you understand if
    the entire buffer was consumed (which will allow you to handle
    "junk at end of input").
- 
+
    In the event an error is encountered during parsing, this function
    affords the client a way to get the offset into the most recent
    chunk where the error occured.  0 will be returned if no error
@@ -346,7 +373,8 @@ typedef enum {
 
 typedef struct jhn_lexer_s jhn_lexer_t;
 
-/* allocates a lexer handle */
+/* allocates a lexer handle.  The allcoators can be left at NULL in which
+   case the system allocator (malloc/realloc/free) functions are used. */
 JHN_API jhn_lexer_t *jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
                                      unsigned int allow_comments,
                                      unsigned int validate_utf8);
@@ -358,19 +386,19 @@ JHN_API void jhn_lexer_free(jhn_lexer_t * lexer);
    It should be initialized to zero for a
    new chunk of target text, and upon subsetquent calls with the same
    target text should passed with the value of the previous invocation.
-  
+
    the client may be interested in the value of offset when an error is
    returned from the lexer.  This allows the client to render useful
    error messages.
-  
+
    When you pass the next chunk of data, context should be reinitialized
    to zero.
-  
+
    Finally, the output buffer is usually just a pointer into the json_text,
    however in cases where the entity being lexed spans multiple chunks,
    the lexer will buffer the entity and the data returned will be
    a pointer into that buffer.
-  
+
    This behavior is abstracted from client code except for the performance
    implications which require that the client choose a reasonable chunk
    size to get adequate performance. */
@@ -397,7 +425,8 @@ typedef enum {
     jhn_lexer_unallowed_comment
 } jhn_lexer_error_t;
 
-/* converts the given lexer error into a string */
+/* converts the given lexer error into a string.  This string is statically
+   allocated. */
 JHN_API const char *jhn_lexer_error_to_string(jhn_lexer_error_t error);
 
 /* allows access to more specific information about the lexical

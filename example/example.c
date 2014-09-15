@@ -124,7 +124,7 @@ main(int argc, char **argv)
 
     /* setup generator */
     gen = jhn_gen_alloc(NULL);
-    jhn_gen_config(gen, jhn_gen_print_callback, on_print);
+    jhn_gen_config(gen, jhn_gen_print_callback, on_print, NULL);
     jhn_gen_config(gen, jhn_gen_beautify, 1);
     jhn_gen_config(gen, jhn_gen_indent_string, "  ");
 

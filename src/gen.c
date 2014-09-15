@@ -137,8 +137,8 @@ jhn_gen_free(jhn_gen_t *g)
             unsigned int _i;                                            \
             for (_i=0;_i<g->depth;_i++)                                 \
                 g->print(g->ctx,                                        \
-                         g->indent_string,                               \
-                         (unsigned int)strlen(g->indent_string));        \
+                         g->indent_string,                              \
+                         (unsigned int)strlen(g->indent_string));       \
         }                                                               \
     }
 

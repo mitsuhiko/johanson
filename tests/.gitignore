@@ -1,0 +1,5 @@
+tests-debug
+tests-release
+solutions
+*.out
+*.test

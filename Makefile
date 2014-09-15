@@ -24,7 +24,6 @@ clean:
 	@rm -rf build
 
 test: compile-all
-	DYLD_LIBRARY_PATH=build/release/native ./tests/run_tests.sh ./build/tests/release/native/tests
-	DYLD_LIBRARY_PATH=build/debug/native ./tests/run_tests.sh ./build/tests/debug/native/tests
+	@$(MAKE) -C tests test
 
 .PHONY: all solutions compile compile-debug compile-all clean

@@ -124,7 +124,7 @@ jhn_gen_free(jhn_gen_t *g)
     }
 }
 
-#define INSERT_SEP \
+#define INSERT_SEP do {                                                 \
     if (g->state[g->depth] == jhn_gen_map_key ||                        \
         g->state[g->depth] == jhn_gen_in_array) {                       \
         g->print(g->ctx, ",", 1);                                       \
@@ -132,9 +132,10 @@ jhn_gen_free(jhn_gen_t *g)
     } else if (g->state[g->depth] == jhn_gen_map_val) {                 \
         g->print(g->ctx, ":", 1);                                       \
         if ((g->flags & jhn_gen_beautify)) g->print(g->ctx, " ", 1);    \
-   }
+   }                                                                    \
+} while (0)
 
-#define INSERT_WHITESPACE                                               \
+#define INSERT_WHITESPACE do {                                          \
     if ((g->flags & jhn_gen_beautify)) {                                \
         if (g->state[g->depth] != jhn_gen_map_val) {                    \
             unsigned int _i;                                            \
@@ -143,30 +144,34 @@ jhn_gen_free(jhn_gen_t *g)
                          g->indent_string,                              \
                          g->indent_string_len);                         \
         }                                                               \
-    }
+    }                                                                   \
+} while (0)
 
-#define ENSURE_NOT_KEY \
-    if (g->state[g->depth] == jhn_gen_map_key ||       \
-        g->state[g->depth] == jhn_gen_map_start)  {    \
-        return jhn_gen_keys_must_be_strings;           \
-    }                                                  \
+#define ENSURE_NOT_KEY do {                             \
+    if (g->state[g->depth] == jhn_gen_map_key ||        \
+        g->state[g->depth] == jhn_gen_map_start)  {     \
+        return jhn_gen_keys_must_be_strings;            \
+    }                                                   \
+} while (0)
 
 /* check that we're not complete, or in error state.  in a valid state
  * to be generating */
-#define ENSURE_VALID_STATE \
-    if (g->state[g->depth] == jhn_gen_error) {             \
-        return jhn_gen_in_error_state;                     \
-    } else if (g->state[g->depth] == jhn_gen_complete) {   \
-        return jhn_gen_generation_complete;                \
-    }
+#define ENSURE_VALID_STATE do {                             \
+    if (g->state[g->depth] == jhn_gen_error) {              \
+        return jhn_gen_in_error_state;                      \
+    } else if (g->state[g->depth] == jhn_gen_complete) {    \
+        return jhn_gen_generation_complete;                 \
+    }                                                       \
+} while (0)
 
 #define INCREMENT_DEPTH \
     if (++(g->depth) >= JHN_MAX_DEPTH) return jhn_max_depth_exceeded;
 
-#define DECREMENT_DEPTH \
-  if (--(g->depth) >= JHN_MAX_DEPTH) return jhn_gen_generation_complete;
+#define DECREMENT_DEPTH do { \
+    if (--(g->depth) >= JHN_MAX_DEPTH) return jhn_gen_generation_complete; \
+} while (0)
 
-#define APPENDED_ATOM \
+#define APPENDED_ATOM do {                          \
     switch (g->state[g->depth]) {                   \
         case jhn_gen_start:                         \
             g->state[g->depth] = jhn_gen_complete;  \
@@ -184,10 +189,13 @@ jhn_gen_free(jhn_gen_t *g)
         default:                                    \
             break;                                  \
     }                                               \
+} while (0)
 
-#define FINAL_NEWLINE \
-    if ((g->flags & jhn_gen_beautify) && g->state[g->depth] == jhn_gen_complete) \
-        g->print(g->ctx, "\n", 1);
+#define FINAL_NEWLINE do { \
+    if ((g->flags & jhn_gen_beautify) &&            \
+        g->state[g->depth] == jhn_gen_complete)     \
+        g->print(g->ctx, "\n", 1);                  \
+} while (0)
 
 jhn_gen_status
 jhn_gen_integer(jhn_gen_t *g, long long int number)

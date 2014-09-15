@@ -8,15 +8,16 @@
 
 #define JHN_BUF_INIT_SIZE 2048
 
-struct jhn_buf_t {
+struct jhn__buf_s {
     size_t len;
     size_t used;
     char *data;
-    jhn_alloc_funcs * alloc;
+    jhn_alloc_funcs *alloc;
 };
 
-static
-void jhn_buf_ensure_available(jhn_buf buf, size_t want)
+
+static void
+ensure_available(jhn__buf buf, size_t want)
 {
     size_t need;
     
@@ -41,50 +42,60 @@ void jhn_buf_ensure_available(jhn_buf buf, size_t want)
     }
 }
 
-jhn_buf jhn_buf_alloc(jhn_alloc_funcs * alloc)
+jhn__buf
+jhn__buf_alloc(jhn_alloc_funcs * alloc)
 {
-    jhn_buf b = JO_MALLOC(alloc, sizeof(struct jhn_buf_t));
-    memset((void *) b, 0, sizeof(struct jhn_buf_t));
+    jhn__buf b = JO_MALLOC(alloc, sizeof(struct jhn__buf_s));
+    memset(b, 0, sizeof(struct jhn__buf_s));
     b->alloc = alloc;
     return b;
 }
 
-void jhn_buf_free(jhn_buf buf)
+void
+jhn__buf_free(jhn__buf buf)
 {
-    assert(buf != NULL);
-    if (buf->data) JO_FREE(buf->alloc, buf->data);
+    assert(buf);
+    if (buf->data) {
+        JO_FREE(buf->alloc, buf->data);
+    }
     JO_FREE(buf->alloc, buf);
 }
 
-void jhn_buf_append(jhn_buf buf, const void * data, size_t len)
+void
+jhn__buf_append(jhn__buf buf, const void *data, size_t len)
 {
-    jhn_buf_ensure_available(buf, len);
+    ensure_available(buf, len);
     if (len > 0) {
-        assert(data != NULL);
+        assert(data);
         memcpy(buf->data + buf->used, data, len);
         buf->used += len;
         buf->data[buf->used] = 0;
     }
 }
 
-void jhn_buf_clear(jhn_buf buf)
+void
+jhn__buf_clear(jhn__buf buf)
 {
     buf->used = 0;
-    if (buf->data) buf->data[buf->used] = 0;
+    if (buf->data) {
+        buf->data[buf->used] = 0;
+    }
 }
 
-const char *jhn_buf_data(jhn_buf buf)
+const char *
+jhn__buf_data(jhn__buf buf)
 {
     return buf->data;
 }
 
-size_t jhn_buf_len(jhn_buf buf)
+size_t
+jhn__buf_len(jhn__buf buf)
 {
     return buf->used;
 }
 
 void
-jhn_buf_truncate(jhn_buf buf, size_t len)
+jhn__buf_truncate(jhn__buf buf, size_t len)
 {
     assert(len <= buf->used);
     buf->used = len;

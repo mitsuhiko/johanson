@@ -5,11 +5,11 @@
 
 #include "buf.h"
 
-void jhn_string_encode(const jhn_print_t printer, void *ctx, const char *str,
+void jhn__string_encode(const jhn_print_t printer, void *ctx, const char *str,
                        size_t length, int escape_solidus);
 
-void jhn_string_decode(jhn_buf buf, const char *str, size_t length);
+void jhn__string_decode(jhn__buf buf, const char *str, size_t length);
 
-int jhn_string_validate_utf8(const char *s, size_t len);
+int jhn__string_validate_utf8(const char *s, size_t len);
 
 #endif

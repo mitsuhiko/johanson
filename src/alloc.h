@@ -7,6 +7,6 @@
 #define JO_FREE(afs, ptr) (afs)->free_func((afs)->ctx, (ptr))
 #define JO_REALLOC(afs, ptr, sz) (afs)->realloc_func((afs)->ctx, (ptr), (sz))
 
-void jhn_set_default_alloc_funcs(jhn_alloc_funcs * yaf);
+void jhn__set_default_alloc_funcs(jhn_alloc_funcs * yaf);
 
 #endif

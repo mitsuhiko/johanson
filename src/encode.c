@@ -17,8 +17,8 @@ char_to_hex(char c, char *hex_buf)
 }
 
 void
-jhn_string_encode(const jhn_print_t print, void *ctx, const char *str,
-                  size_t len, int escape_solidus)
+jhn__string_encode(const jhn_print_t print, void *ctx, const char *str,
+                   size_t len, int escape_solidus)
 {
     size_t beg = 0;
     size_t end = 0;
@@ -60,7 +60,8 @@ jhn_string_encode(const jhn_print_t print, void *ctx, const char *str,
     print(ctx, (str + beg), end - beg);
 }
 
-static void hex_to_digit(unsigned int *val, const char *hex)
+static void
+hex_to_digit(unsigned int *val, const char *hex)
 {
     unsigned int i;
     for (i=0;i<4;i++) {
@@ -74,7 +75,8 @@ static void hex_to_digit(unsigned int *val, const char *hex)
     }
 }
 
-static void utf32_to_utf8(unsigned int codepoint, char *utf8_buf) 
+static void
+utf32_to_utf8(unsigned int codepoint, char *utf8_buf) 
 {
     unsigned char *buf = (unsigned char *)utf8_buf;
     if (codepoint < 0x80) {
@@ -101,7 +103,8 @@ static void utf32_to_utf8(unsigned int codepoint, char *utf8_buf)
     }
 }
 
-void jhn_string_decode(jhn_buf buf, const char *str, size_t len)
+void
+jhn__string_decode(jhn__buf buf, const char *str, size_t len)
 {
     size_t beg = 0;
     size_t end = 0;    
@@ -110,7 +113,7 @@ void jhn_string_decode(jhn_buf buf, const char *str, size_t len)
         if (str[end] == '\\') {
             char utf8_buf[5];
             const char * unescaped = "?";
-            jhn_buf_append(buf, str + beg, end - beg);
+            jhn__buf_append(buf, str + beg, end - beg);
             switch (str[++end]) {
                 case 'r': unescaped = "\r"; break;
                 case 'n': unescaped = "\n"; break;
@@ -145,7 +148,7 @@ void jhn_string_decode(jhn_buf buf, const char *str, size_t len)
                     unescaped = utf8_buf;
 
                     if (codepoint == 0) {
-                        jhn_buf_append(buf, unescaped, 1);
+                        jhn__buf_append(buf, unescaped, 1);
                         beg = ++end;
                         continue;
                     }
@@ -155,18 +158,19 @@ void jhn_string_decode(jhn_buf buf, const char *str, size_t len)
                 default:
                     assert("this should never happen" == NULL);
             }
-            jhn_buf_append(buf, unescaped, (unsigned int)strlen(unescaped));
+            jhn__buf_append(buf, unescaped, (unsigned int)strlen(unescaped));
             beg = ++end;
         } else {
             end++;
         }
     }
-    jhn_buf_append(buf, str + beg, end - beg);
+    jhn__buf_append(buf, str + beg, end - beg);
 }
 
 #define ADV_PTR s++; if (!(len--)) return 0;
 
-int jhn_string_validate_utf8(const char *str, size_t len)
+int
+jhn__string_validate_utf8(const char *str, size_t len)
 {
     const unsigned char *s = (const unsigned char *)str;
 

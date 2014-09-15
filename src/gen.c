@@ -30,10 +30,10 @@ typedef enum {
 struct jhn_gen_s {
     unsigned int flags;
     unsigned int depth;
-    const char * indentString;
+    const char *indent_string;
     jhn_gen_state state[JHN_MAX_DEPTH];
     jhn_print_t print;
-    void * ctx; /* jhn_buf */
+    void *ctx;
     /* memory allocation routines */
     jhn_alloc_funcs alloc;
 };
@@ -54,7 +54,7 @@ jhn_gen_config(jhn_gen g, jhn_gen_option opt, ...)
             break;
         case jhn_gen_indent_string: {
             const char *indent = va_arg(ap, const char *);
-            g->indentString = indent;
+            g->indent_string = indent;
             for (; *indent; indent++) {
                 if (*indent != '\n'
                     && *indent != '\v'
@@ -63,14 +63,14 @@ jhn_gen_config(jhn_gen g, jhn_gen_option opt, ...)
                     && *indent != '\r'
                     && *indent != ' ')
                 {
-                    g->indentString = NULL;
+                    g->indent_string = NULL;
                     rv = 0;
                 }
             }
             break;
         }
         case jhn_gen_print_callback:
-            jhn_buf_free(g->ctx);
+            jhn__buf_free(g->ctx);
             g->print = va_arg(ap, const jhn_print_t);
             g->ctx = va_arg(ap, void *);
             break;
@@ -97,7 +97,7 @@ jhn_gen_alloc(const jhn_alloc_funcs *afs)
             return NULL;
         }
     } else {
-        jhn_set_default_alloc_funcs(&afs_buffer);
+        jhn__set_default_alloc_funcs(&afs_buffer);
         afs = &afs_buffer;
     }
 
@@ -109,9 +109,9 @@ jhn_gen_alloc(const jhn_alloc_funcs *afs)
     /* copy in pointers to allocation routines */
     memcpy((void *)&(g->alloc), (void *)afs, sizeof(jhn_alloc_funcs));
 
-    g->print = (jhn_print_t)&jhn_buf_append;
-    g->ctx = jhn_buf_alloc(&(g->alloc));
-    g->indentString = "    ";
+    g->print = (jhn_print_t)&jhn__buf_append;
+    g->ctx = jhn__buf_alloc(&(g->alloc));
+    g->indent_string = "    ";
 
     return g;
 }
@@ -130,8 +130,8 @@ void
 jhn_gen_free(jhn_gen g)
 {
     if (g) {
-        if (g->print == (jhn_print_t)&jhn_buf_append) {
-            jhn_buf_free((jhn_buf)g->ctx);
+        if (g->print == (jhn_print_t)&jhn__buf_append) {
+            jhn__buf_free((jhn__buf)g->ctx);
         }
         JO_FREE(&(g->alloc), g);
     }
@@ -153,8 +153,8 @@ jhn_gen_free(jhn_gen g)
             unsigned int _i;                                            \
             for (_i=0;_i<g->depth;_i++)                                 \
                 g->print(g->ctx,                                        \
-                         g->indentString,                               \
-                         (unsigned int)strlen(g->indentString));        \
+                         g->indent_string,                               \
+                         (unsigned int)strlen(g->indent_string));        \
         }                                                               \
     }
 
@@ -256,13 +256,13 @@ jhn_gen_string(jhn_gen g, const char *str, size_t len)
     // XXX: This checking could be done a little faster, in the same pass as
     // the string encoding
     if (g->flags & jhn_gen_validate_utf8) {
-        if (!jhn_string_validate_utf8(str, len)) {
+        if (!jhn__string_validate_utf8(str, len)) {
             return jhn_gen_invalid_string;
         }
     }
     ENSURE_VALID_STATE; INSERT_SEP; INSERT_WHITESPACE;
     g->print(g->ctx, "\"", 1);
-    jhn_string_encode(g->print, g->ctx, str, len, g->flags & jhn_gen_escape_solidus);
+    jhn__string_encode(g->print, g->ctx, str, len, g->flags & jhn_gen_escape_solidus);
     g->print(g->ctx, "\"", 1);
     APPENDED_ATOM;
     FINAL_NEWLINE;
@@ -354,18 +354,18 @@ jhn_gen_array_close(jhn_gen g)
 jhn_gen_status
 jhn_gen_get_buf(jhn_gen g, const char **buf, size_t *len)
 {
-    if (g->print != (jhn_print_t)&jhn_buf_append) {
+    if (g->print != (jhn_print_t)&jhn__buf_append) {
         return jhn_gen_no_buf;
     }
-    *buf = jhn_buf_data((jhn_buf)g->ctx);
-    *len = jhn_buf_len((jhn_buf)g->ctx);
+    *buf = jhn__buf_data((jhn__buf)g->ctx);
+    *len = jhn__buf_len((jhn__buf)g->ctx);
     return jhn_gen_status_ok;
 }
 
 void
 jhn_gen_clear(jhn_gen g)
 {
-    if (g->print == (jhn_print_t)&jhn_buf_append) {
-        jhn_buf_clear((jhn_buf)g->ctx);
+    if (g->print == (jhn_print_t)&jhn__buf_append) {
+        jhn__buf_clear((jhn__buf)g->ctx);
     }
 }

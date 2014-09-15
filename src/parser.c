@@ -1,6 +1,5 @@
 #include <johanson.h>
 
-#include "parser.h"
 #include "encode.h"
 #include "bytestack.h"
 
@@ -15,6 +14,41 @@
 #include <math.h>
 
 #define MAX_VALUE_TO_MULTIPLY ((LLONG_MAX / 10) + (LLONG_MAX % 10))
+
+typedef enum {
+    jhn_state_start = 0,
+    jhn_state_parse_complete,
+    jhn_state_parse_error,
+    jhn_state_lexical_error,
+    jhn_state_map_start,
+    jhn_state_map_sep,
+    jhn_state_map_need_val,
+    jhn_state_map_got_val,
+    jhn_state_map_need_key,
+    jhn_state_array_start,
+    jhn_state_array_got_val,
+    jhn_state_array_need_val,
+    jhn_state_got_value,
+} jhn_state;
+
+struct jhn_parser_s {
+    const jhn_parser_callbacks *callbacks;
+    void *ctx;
+    jhn_lexer lexer;
+    const char *parse_error;
+    /* the number of bytes consumed from the last client buffer,
+     * in the case of an error this will be an error offset, in the
+     * case of an error this can be used as the error offset */
+    size_t bytes_consumed;
+    /* temporary storage for decoded strings */
+    jhn__buf decode_buf;
+    /* a stack of states.  access with jhn_state_XXX routines */
+    jhn_bytestack state_stack;
+    /* memory allocation routines */
+    jhn_alloc_funcs alloc;
+    /* bitfield */
+    unsigned int flags;
+};
 
 
 /* same semantics as strtol */
@@ -206,11 +240,11 @@ around_again:
             break;
         case jhn_tok_string_with_escapes:
             if (hand->callbacks && hand->callbacks->jhn_string) {
-                jhn_buf_clear(hand->decode_buf);
-                jhn_string_decode(hand->decode_buf, buf, bufLen);
+                jhn__buf_clear(hand->decode_buf);
+                jhn__string_decode(hand->decode_buf, buf, bufLen);
                 _CC_CHK(hand->callbacks->jhn_string(
-                        hand->ctx, jhn_buf_data(hand->decode_buf),
-                        jhn_buf_len(hand->decode_buf)));
+                        hand->ctx, jhn__buf_data(hand->decode_buf),
+                        jhn__buf_len(hand->decode_buf)));
             }
             break;
         case jhn_tok_bool:
@@ -268,9 +302,9 @@ around_again:
                                 hand->ctx, (const char *) buf, bufLen));
                 } else if (hand->callbacks->jhn_double) {
                     double d = 0.0;
-                    jhn_buf_clear(hand->decode_buf);
-                    jhn_buf_append(hand->decode_buf, buf, bufLen);
-                    buf = jhn_buf_data(hand->decode_buf);
+                    jhn__buf_clear(hand->decode_buf);
+                    jhn__buf_append(hand->decode_buf, buf, bufLen);
+                    buf = jhn__buf_data(hand->decode_buf);
                     errno = 0;
                     d = strtod((char *) buf, NULL);
                     if ((d == HUGE_VAL || d == -HUGE_VAL) &&
@@ -348,10 +382,10 @@ around_again:
                 goto around_again;
             case jhn_tok_string_with_escapes:
                 if (hand->callbacks && hand->callbacks->jhn_map_key) {
-                    jhn_buf_clear(hand->decode_buf);
-                    jhn_string_decode(hand->decode_buf, buf, bufLen);
-                    buf = jhn_buf_data(hand->decode_buf);
-                    bufLen = jhn_buf_len(hand->decode_buf);
+                    jhn__buf_clear(hand->decode_buf);
+                    jhn__string_decode(hand->decode_buf, buf, bufLen);
+                    buf = jhn__buf_data(hand->decode_buf);
+                    bufLen = jhn__buf_len(hand->decode_buf);
                 }
                 /* intentional fall-through */
             case jhn_tok_string:
@@ -512,7 +546,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
             return NULL;
         }
     } else {
-        jhn_set_default_alloc_funcs(&afs_buffer);
+        jhn__set_default_alloc_funcs(&afs_buffer);
         afs = &afs_buffer;
     }
 
@@ -525,7 +559,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
     hand->ctx = ctx;
     hand->lexer = NULL; 
     hand->bytes_consumed = 0;
-    hand->decode_buf = jhn_buf_alloc(&(hand->alloc));
+    hand->decode_buf = jhn__buf_alloc(&(hand->alloc));
     hand->flags	= 0;
     jhn_bs_init(hand->state_stack, &(hand->alloc));
     jhn_bs_push(hand->state_stack, jhn_state_start);
@@ -565,7 +599,7 @@ jhn_parser_free(jhn_parser handle)
 {
     if (handle) {
         jhn_bs_free(handle->state_stack);
-        jhn_buf_free(handle->decode_buf);
+        jhn__buf_free(handle->decode_buf);
         if (handle->lexer) {
             jhn_lex_free(handle->lexer);
             handle->lexer = NULL;

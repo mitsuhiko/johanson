@@ -60,7 +60,7 @@ struct jhn_lexer_s {
 
     /* a input buffer to handle the case where a token is spread over
      * multiple chunks */
-    jhn_buf buf;
+    jhn__buf buf;
 
     /* in the case where we have data in the lexBuf, buf_off holds
      * the current offset into the lexBuf. */
@@ -79,8 +79,8 @@ struct jhn_lexer_s {
 };
 
 #define read_chr(lxr, txt, off)                      \
-    (((lxr)->buf_in_use && jhn_buf_len((lxr)->buf) && lxr->buf_off < jhn_buf_len((lxr)->buf)) ? \
-     (*((const char *) jhn_buf_data((lxr)->buf) + ((lxr)->buf_off)++)) : \
+    (((lxr)->buf_in_use && jhn__buf_len((lxr)->buf) && lxr->buf_off < jhn__buf_len((lxr)->buf)) ? \
+     (*((const char *) jhn__buf_data((lxr)->buf) + ((lxr)->buf_off)++)) : \
      ((txt)[(*(off))++]))
 
 #define unread_chr(lxr, off) ((*(off) > 0) ? (*(off))-- : ((lxr)->buf_off--))
@@ -91,7 +91,7 @@ jhn_lex_alloc(jhn_alloc_funcs *alloc,
 {
     jhn_lexer lxr = (jhn_lexer) JO_MALLOC(alloc, sizeof(struct jhn_lexer_s));
     memset((void *) lxr, 0, sizeof(struct jhn_lexer_s));
-    lxr->buf = jhn_buf_alloc(alloc);
+    lxr->buf = jhn__buf_alloc(alloc);
     lxr->allow_comments = allow_comments;
     lxr->validate_utf8 = validate_utf8;
     lxr->alloc = alloc;
@@ -101,7 +101,7 @@ jhn_lex_alloc(jhn_alloc_funcs *alloc,
 void
 jhn_lex_free(jhn_lexer lxr)
 {
-    jhn_buf_free(lxr->buf);
+    jhn__buf_free(lxr->buf);
     JO_FREE(lxr->alloc, lxr);
     return;
 }
@@ -266,12 +266,12 @@ jhn_lex_string(jhn_lexer lexer, const char * json_text,
             const char * p;
             size_t len;
 
-            if ((lexer->buf_in_use && jhn_buf_len(lexer->buf) &&
-                 lexer->buf_off < jhn_buf_len(lexer->buf)))
+            if ((lexer->buf_in_use && jhn__buf_len(lexer->buf) &&
+                 lexer->buf_off < jhn__buf_len(lexer->buf)))
             {
-                p = ((const char *)jhn_buf_data(lexer->buf) +
+                p = ((const char *)jhn__buf_data(lexer->buf) +
                      (lexer->buf_off));
-                len = jhn_buf_len(lexer->buf) - lexer->buf_off;
+                len = jhn__buf_len(lexer->buf) - lexer->buf_off;
                 lexer->buf_off += jhn_string_scan(p, len, lexer->validate_utf8);
             }
             else if (*offset < length)
@@ -614,7 +614,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                 /* "error" is silly, but that's the initial
                  * state of tok.  guilty until proven innocent. */
                 tok = jhn_tok_error;
-                jhn_buf_clear(lexer->buf);
+                jhn__buf_clear(lexer->buf);
                 lexer->buf_in_use = 0;
                 start_off = *offset;
                 break;
@@ -633,14 +633,14 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
     /* need to append to buffer if the buffer is in use or
        if it's an EOF token */
     if (tok == jhn_tok_eof || lexer->buf_in_use) {
-        if (!lexer->buf_in_use) jhn_buf_clear(lexer->buf);
+        if (!lexer->buf_in_use) jhn__buf_clear(lexer->buf);
         lexer->buf_in_use = 1;
-        jhn_buf_append(lexer->buf, json_text + start_off, *offset - start_off);
+        jhn__buf_append(lexer->buf, json_text + start_off, *offset - start_off);
         lexer->buf_off = 0;
 
         if (tok != jhn_tok_eof) {
-            *out_buf = jhn_buf_data(lexer->buf);
-            *out_len = jhn_buf_len(lexer->buf);
+            *out_buf = jhn__buf_data(lexer->buf);
+            *out_len = jhn__buf_len(lexer->buf);
             lexer->buf_in_use = 0;
         }
     } else if (tok != jhn_tok_error) {
@@ -735,7 +735,7 @@ jhn_tok jhn_lex_peek(jhn_lexer lexer, const char *json_text,
 {
     const char * out_buf;
     size_t out_len;
-    size_t bufLen = jhn_buf_len(lexer->buf);
+    size_t bufLen = jhn__buf_len(lexer->buf);
     size_t buf_off = lexer->buf_off;
     unsigned int buf_in_use = lexer->buf_in_use;
     jhn_tok tok;
@@ -745,7 +745,7 @@ jhn_tok jhn_lex_peek(jhn_lexer lexer, const char *json_text,
 
     lexer->buf_off = buf_off;
     lexer->buf_in_use = buf_in_use;
-    jhn_buf_truncate(lexer->buf, bufLen);
+    jhn__buf_truncate(lexer->buf, bufLen);
 
     return tok;
 }

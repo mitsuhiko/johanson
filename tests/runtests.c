@@ -144,7 +144,7 @@ static void usage(const char *progname)
 int
 main(int argc, char ** argv)
 {
-    jhn_parser_handle hand;
+    jhn_parser hand;
     const char *filename = NULL;
     static char * file_data = NULL;
     FILE *file;

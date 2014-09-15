@@ -23,11 +23,11 @@ jhn_status_to_string(jhn_status stat)
     }
 }
 
-jhn_parser_handle
+jhn_parser
 jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
                  jhn_alloc_funcs *afs, void *ctx)
 {
-    jhn_parser_handle hand = NULL;
+    jhn_parser hand = NULL;
     jhn_alloc_funcs afs_buffer;
 
     /* first order of business is to set up memory allocation routines */
@@ -40,7 +40,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
         afs = &afs_buffer;
     }
 
-    hand = JO_MALLOC(afs, sizeof(struct jhn_parser_handle_s));
+    hand = JO_MALLOC(afs, sizeof(struct jhn_parser_s));
 
     /* copy in pointers to allocation routines */
     memcpy((void *)&(hand->alloc), (void *)afs, sizeof(jhn_alloc_funcs));
@@ -58,7 +58,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
 }
 
 int
-jhn_parser_config(jhn_parser_handle h, jhn_parser_option opt, ...)
+jhn_parser_config(jhn_parser h, jhn_parser_option opt, ...)
 {
     int rv = 1;
     va_list ap;
@@ -85,7 +85,7 @@ jhn_parser_config(jhn_parser_handle h, jhn_parser_option opt, ...)
 }
 
 void
-jhn_parser_free(jhn_parser_handle handle)
+jhn_parser_free(jhn_parser handle)
 {
     if (handle) {
         jhn_bs_free(handle->state_stack);
@@ -99,7 +99,7 @@ jhn_parser_free(jhn_parser_handle handle)
 }
 
 jhn_status
-jhn_parser_parse(jhn_parser_handle hand, const char *json_text, size_t length)
+jhn_parser_parse(jhn_parser hand, const char *json_text, size_t length)
 {
     jhn_status status;
 
@@ -116,7 +116,7 @@ jhn_parser_parse(jhn_parser_handle hand, const char *json_text, size_t length)
 
 
 jhn_status
-jhn_parser_finish(jhn_parser_handle hand)
+jhn_parser_finish(jhn_parser hand)
 {
     /* The lexer is lazy allocated in the first call to parse.  if parse is
      * never called, then no data was provided to parse at all.  This is a
@@ -134,14 +134,14 @@ jhn_parser_finish(jhn_parser_handle hand)
 }
 
 char *
-jhn_parser_get_error(jhn_parser_handle hand, int verbose,
+jhn_parser_get_error(jhn_parser hand, int verbose,
                      const char *json_text, size_t length)
 {
     return jhn_render_error_string(hand, json_text, length, verbose);
 }
 
 size_t
-jhn_get_bytes_consumed(jhn_parser_handle hand)
+jhn_get_bytes_consumed(jhn_parser hand)
 {
     if (!hand)
         return 0;
@@ -149,7 +149,7 @@ jhn_get_bytes_consumed(jhn_parser_handle hand)
 }
 
 void
-jhn_free_error(jhn_parser_handle hand, char *str)
+jhn_free_error(jhn_parser hand, char *str)
 {
     JO_FREE(&(hand->alloc), str);
 }

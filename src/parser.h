@@ -23,7 +23,7 @@ typedef enum {
     jhn_state_got_value,
 } jhn_state;
 
-struct jhn_parser_handle_s {
+struct jhn_parser_s {
     const jhn_parser_callbacks *callbacks;
     void *ctx;
     jhn_lexer lexer;
@@ -42,12 +42,12 @@ struct jhn_parser_handle_s {
     unsigned int flags;
 };
 
-jhn_status jhn_do_parse(jhn_parser_handle handle, const char *json_text,
+jhn_status jhn_do_parse(jhn_parser handle, const char *json_text,
                         size_t length);
 
-jhn_status jhn_do_finish(jhn_parser_handle handle);
+jhn_status jhn_do_finish(jhn_parser handle);
 
-char *jhn_render_error_string(jhn_parser_handle hand, const char *json_text,
+char *jhn_render_error_string(jhn_parser hand, const char *json_text,
                               size_t length, int verbose);
 
 /* A little built in integer parsing routine with the same semantics as strtol

@@ -188,7 +188,7 @@ typedef enum {
 JHN_API const char *jhn_status_to_string(jhn_status code);
 
 /* an opaque handle to a parser */
-typedef struct jhn_parser_handle_s *jhn_parser_handle;
+typedef struct jhn_parser_s *jhn_parser;
 
 /* jhn is an event driven parser.  this means as json elements are
    parsed, you are called back to do something with the data.  The
@@ -237,7 +237,7 @@ typedef struct {
 } jhn_parser_callbacks;
 
 /* allocate a parser handle */
-JHN_API jhn_parser_handle jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
+JHN_API jhn_parser jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
                                            jhn_alloc_funcs *afs,
                                            void *ctx);
 
@@ -287,15 +287,15 @@ typedef enum {
    allocation (via jhn_alloc)
 
    returns zero in case of errors, non-zero otherwise */
-JHN_API int jhn_parser_config(jhn_parser_handle h, jhn_parser_option opt, ...);
+JHN_API int jhn_parser_config(jhn_parser h, jhn_parser_option opt, ...);
 
 /** free a parser handle */
-JHN_API void jhn_parser_free(jhn_parser_handle handle);
+JHN_API void jhn_parser_free(jhn_parser handle);
 
 /* Parse some json!
    json_text - a pointer to the UTF8 json text to be parsed
    length - the length, in bytes, of input text */
-JHN_API jhn_status jhn_parser_parse(jhn_parser_handle hand,
+JHN_API jhn_status jhn_parser_parse(jhn_parser hand,
                                     const char *json_text,
                                     size_t length);
 
@@ -305,7 +305,7 @@ JHN_API jhn_status jhn_parser_parse(jhn_parser_handle hand,
    stream is valid or not.  For example, if "1" has been fed in,
    jhn can't know whether another digit is next or some character
    that would terminate the integer token. */
-JHN_API jhn_status jhn_parser_finish(jhn_parser_handle hand);
+JHN_API jhn_status jhn_parser_finish(jhn_parser hand);
 
 /* get an error string describing the state of the parse.
  
@@ -315,7 +315,7 @@ JHN_API jhn_status jhn_parser_finish(jhn_parser_handle hand);
  
    Returns A dynamically allocated string will be returned which should
    be freed with jhn_free_error */
-JHN_API char *jhn_parser_get_error(jhn_parser_handle hand, int verbose,
+JHN_API char *jhn_parser_get_error(jhn_parser hand, int verbose,
                                    const char *json_text,
                                    size_t length);
 
@@ -329,10 +329,10 @@ JHN_API char *jhn_parser_get_error(jhn_parser_handle hand, int verbose,
    affords the client a way to get the offset into the most recent
    chunk where the error occured.  0 will be returned if no error
    was encountered. */
-JHN_API size_t jhn_get_bytes_consumed(jhn_parser_handle hand);
+JHN_API size_t jhn_get_bytes_consumed(jhn_parser hand);
 
 /* free an error returned from jhn_parser_get_error */
-JHN_API void jhn_free_error(jhn_parser_handle hand, char *str);
+JHN_API void jhn_free_error(jhn_parser hand, char *str);
 
 
 typedef enum {

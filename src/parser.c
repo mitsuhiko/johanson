@@ -46,7 +46,7 @@ jhn_parse_integer(const char *number, unsigned int length)
 }
 
 char *
-jhn_render_error_string(jhn_parser_handle hand, const char *json_text,
+jhn_render_error_string(jhn_parser hand, const char *json_text,
                         size_t length, int verbose)
 {
     size_t offset = hand->bytes_consumed;
@@ -141,7 +141,7 @@ jhn_render_error_string(jhn_parser_handle hand, const char *json_text,
 
 
 jhn_status
-jhn_do_finish(jhn_parser_handle hand)
+jhn_do_finish(jhn_parser hand)
 {
     jhn_status stat;
     stat = jhn_do_parse(hand, " ",1);
@@ -170,7 +170,7 @@ jhn_do_finish(jhn_parser_handle hand)
 }
 
 jhn_status
-jhn_do_parse(jhn_parser_handle hand, const char *json_text, size_t length)
+jhn_do_parse(jhn_parser hand, const char *json_text, size_t length)
 {
     jhn_tok tok;
     const char * buf;

@@ -55,18 +55,6 @@ jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...)
         case jhn_gen_indent_string: {
             const char *indent = va_arg(ap, const char *);
             g->indent_string = indent;
-            for (; *indent; indent++) {
-                if (*indent != '\n'
-                    && *indent != '\v'
-                    && *indent != '\f'
-                    && *indent != '\t'
-                    && *indent != '\r'
-                    && *indent != ' ')
-                {
-                    g->indent_string = NULL;
-                    rv = 0;
-                }
-            }
             break;
         }
         case jhn_gen_print_callback:

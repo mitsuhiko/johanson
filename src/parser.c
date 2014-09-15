@@ -548,7 +548,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
     hand = JO_MALLOC(afs, sizeof(jhn_parser_t));
 
     /* copy in pointers to allocation routines */
-    memcpy((void *)&(hand->alloc), (void *)afs, sizeof(jhn_alloc_funcs_t));
+    memcpy(&(hand->alloc), afs, sizeof(jhn_alloc_funcs_t));
 
     hand->callbacks = callbacks;
     hand->ctx = ctx;

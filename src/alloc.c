@@ -10,23 +10,22 @@ static void *jhn_internal_malloc(void *ctx, size_t sz)
     return malloc(sz);
 }
 
-static void *jhn_internal_realloc(void *ctx, void * previous,
-                                    size_t sz)
+static void *jhn_internal_realloc(void *ctx, void *previous, size_t sz)
 {
     (void)ctx;
     return realloc(previous, sz);
 }
 
-static void jhn_internal_free(void *ctx, void * ptr)
+static void jhn_internal_free(void *ctx, void *ptr)
 {
     (void)ctx;
     free(ptr);
 }
 
-void jhn_set_default_alloc_funcs(jhn_alloc_funcs * yaf)
+void jhn_set_default_alloc_funcs(jhn_alloc_funcs *af)
 {
-    yaf->malloc_func = jhn_internal_malloc;
-    yaf->free_func = jhn_internal_free;
-    yaf->realloc_func = jhn_internal_realloc;
-    yaf->ctx = NULL;
+    af->malloc_func = jhn_internal_malloc;
+    af->free_func = jhn_internal_free;
+    af->realloc_func = jhn_internal_realloc;
+    af->ctx = NULL;
 }

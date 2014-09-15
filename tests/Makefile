@@ -1,12 +1,12 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	EXPORTS += "LD_LIBRARY_PATH=../build/debug/native:../build/release/native"
+	EXPORTS += LD_LIBRARY_PATH=../build/debug/native:../build/release/native
 endif
 
 all: test
 
 test: tests
-	$(EXPORTS)./run_tests.sh ./tests-debug
+	$(EXPORTS) ./run_tests.sh ./tests-debug
 	$(EXPORTS) ./run_tests.sh ./tests-release
 
 solutions/Makefile:

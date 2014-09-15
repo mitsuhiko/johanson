@@ -46,7 +46,7 @@ typedef struct {
     jhn_realloc_func realloc_func;
     jhn_free_func free_func;
     void *ctx;
-} jhn_alloc_funcs;
+} jhn_alloc_funcs_t;
 
 
 /* generator status codes */
@@ -76,7 +76,7 @@ typedef enum {
 } jhn_gen_status;
 
 /* an opaque handle to a generator */
-typedef struct jhn_gen_s *jhn_gen;
+typedef struct jhn_gen_s jhn_gen_t;
 
 /* a callback used for "printing" the results. */
 typedef void (*jhn_print_t)(void *ctx, const char *str, size_t len);
@@ -113,44 +113,44 @@ typedef enum {
 /* allow the modification of generator options subsequent to handle
    allocation (via jhn_alloc)
    \returns zero in case of errors, non-zero otherwise */
-JHN_API int jhn_gen_config(jhn_gen g, jhn_gen_option opt, ...);
+JHN_API int jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...);
 
 /* allocate a generator handle */
-JHN_API jhn_gen jhn_gen_alloc(const jhn_alloc_funcs *alloc_funcs);
+JHN_API jhn_gen_t *jhn_gen_alloc(const jhn_alloc_funcs_t *alloc_funcs);
 
 /* free a generator handle */
-JHN_API void jhn_gen_free(jhn_gen handle);
+JHN_API void jhn_gen_free(jhn_gen_t *handle);
 
-JHN_API jhn_gen_status jhn_gen_integer(jhn_gen hand, long long int number);
+JHN_API jhn_gen_status jhn_gen_integer(jhn_gen_t *hand, long long int number);
 
 /* generate a floating point number.  number may not be infinity or
    NaN, as these have no representation in JSON.  In these cases the
    generator will return 'jhn_gen_invalid_number' */
-JHN_API jhn_gen_status jhn_gen_double(jhn_gen hand, double number);
-JHN_API jhn_gen_status jhn_gen_number(jhn_gen hand,
+JHN_API jhn_gen_status jhn_gen_double(jhn_gen_t *hand, double number);
+JHN_API jhn_gen_status jhn_gen_number(jhn_gen_t *hand,
                                       const char *num,
                                       size_t len);
-JHN_API jhn_gen_status jhn_gen_string(jhn_gen hand,
+JHN_API jhn_gen_status jhn_gen_string(jhn_gen_t *hand,
                                       const char *str,
                                       size_t len);
-JHN_API jhn_gen_status jhn_gen_null(jhn_gen hand);
-JHN_API jhn_gen_status jhn_gen_bool(jhn_gen hand, int boolean);
-JHN_API jhn_gen_status jhn_gen_map_open(jhn_gen hand);
-JHN_API jhn_gen_status jhn_gen_map_close(jhn_gen hand);
-JHN_API jhn_gen_status jhn_gen_array_open(jhn_gen hand);
-JHN_API jhn_gen_status jhn_gen_array_close(jhn_gen hand);
+JHN_API jhn_gen_status jhn_gen_null(jhn_gen_t *hand);
+JHN_API jhn_gen_status jhn_gen_bool(jhn_gen_t *hand, int boolean);
+JHN_API jhn_gen_status jhn_gen_map_open(jhn_gen_t *hand);
+JHN_API jhn_gen_status jhn_gen_map_close(jhn_gen_t *hand);
+JHN_API jhn_gen_status jhn_gen_array_open(jhn_gen_t *hand);
+JHN_API jhn_gen_status jhn_gen_array_close(jhn_gen_t *hand);
 
 /* access the null terminated generator buffer.  If incrementally
    outputing JSON, one should call jhn_gen_clear to clear the
    buffer.  This allows stream generation. */
-JHN_API jhn_gen_status jhn_gen_get_buf(jhn_gen hand,
+JHN_API jhn_gen_status jhn_gen_get_buf(jhn_gen_t *hand,
                                        const char **buf,
                                        size_t *len);
 
 /* clear jhn's output buffer, but maintain all internal generation
    state.  This function will not "reset" the generator state, and is
    intended to enable incremental JSON outputing. */
-JHN_API void jhn_gen_clear(jhn_gen hand);
+JHN_API void jhn_gen_clear(jhn_gen_t *hand);
 
 /* Reset the generator state.  Allows a client to generate multiple
    json entities in a stream. The "sep" string will be inserted to
@@ -161,7 +161,7 @@ JHN_API void jhn_gen_clear(jhn_gen hand);
  
    Note: this call will not clear jhn's output buffer.  This
    may be accomplished explicitly by calling jhn_gen_clear() */
-JHN_API void jhn_gen_reset(jhn_gen hand, const char *sep);
+JHN_API void jhn_gen_reset(jhn_gen_t *hand, const char *sep);
 
 
 /* error codes returned from this interface */
@@ -179,7 +179,7 @@ typedef enum {
 JHN_API const char *jhn_parser_status_to_string(jhn_parser_status code);
 
 /* an opaque handle to a parser */
-typedef struct jhn_parser_s *jhn_parser;
+typedef struct jhn_parser_s jhn_parser_t;
 
 /* jhn is an event driven parser.  this means as json elements are
    parsed, you are called back to do something with the data.  The
@@ -228,8 +228,8 @@ typedef struct {
 } jhn_parser_callbacks;
 
 /* allocate a parser handle */
-JHN_API jhn_parser jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
-                                           jhn_alloc_funcs *afs,
+JHN_API jhn_parser_t *jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
+                                           jhn_alloc_funcs_t *afs,
                                            void *ctx);
 
 
@@ -278,15 +278,15 @@ typedef enum {
    allocation (via jhn_alloc)
 
    returns zero in case of errors, non-zero otherwise */
-JHN_API int jhn_parser_config(jhn_parser h, jhn_parser_option opt, ...);
+JHN_API int jhn_parser_config(jhn_parser_t *h, jhn_parser_option opt, ...);
 
 /** free a parser handle */
-JHN_API void jhn_parser_free(jhn_parser handle);
+JHN_API void jhn_parser_free(jhn_parser_t *handle);
 
 /* Parse some json!
    json_text - a pointer to the UTF8 json text to be parsed
    length - the length, in bytes, of input text */
-JHN_API jhn_parser_status jhn_parser_parse(jhn_parser hand,
+JHN_API jhn_parser_status jhn_parser_parse(jhn_parser_t *hand,
                                     const char *json_text,
                                     size_t length);
 
@@ -296,7 +296,7 @@ JHN_API jhn_parser_status jhn_parser_parse(jhn_parser hand,
    stream is valid or not.  For example, if "1" has been fed in,
    jhn can't know whether another digit is next or some character
    that would terminate the integer token. */
-JHN_API jhn_parser_status jhn_parser_finish(jhn_parser hand);
+JHN_API jhn_parser_status jhn_parser_finish(jhn_parser_t *hand);
 
 /* get an error string describing the state of the parse.
  
@@ -306,7 +306,7 @@ JHN_API jhn_parser_status jhn_parser_finish(jhn_parser hand);
  
    Returns A dynamically allocated string will be returned which should
    be freed with jhn_free_error */
-JHN_API char *jhn_parser_get_error(jhn_parser hand, int verbose,
+JHN_API char *jhn_parser_get_error(jhn_parser_t *hand, int verbose,
                                    const char *json_text,
                                    size_t length);
 
@@ -320,10 +320,10 @@ JHN_API char *jhn_parser_get_error(jhn_parser hand, int verbose,
    affords the client a way to get the offset into the most recent
    chunk where the error occured.  0 will be returned if no error
    was encountered. */
-JHN_API size_t jhn_parser_get_bytes_consumed(jhn_parser hand);
+JHN_API size_t jhn_parser_get_bytes_consumed(jhn_parser_t *hand);
 
 /* free an error returned from jhn_parser_get_error */
-JHN_API void jhn_parser_free_error(jhn_parser hand, char *str);
+JHN_API void jhn_parser_free_error(jhn_parser_t *hand, char *str);
 
 
 typedef enum {
@@ -344,15 +344,15 @@ typedef enum {
     jhn_tok_comment
 } jhn_tok;
 
-typedef struct jhn_lexer_s *jhn_lexer;
+typedef struct jhn_lexer_s jhn_lexer_t;
 
 /* allocates a lexer handle */
-JHN_API jhn_lexer jhn_lex_alloc(jhn_alloc_funcs *alloc,
-                                unsigned int allow_comments,
-                                unsigned int validate_utf8);
+JHN_API jhn_lexer_t *jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
+                                     unsigned int allow_comments,
+                                     unsigned int validate_utf8);
 
 /* frees a lexer handle */
-JHN_API void jhn_lex_free(jhn_lexer lexer);
+JHN_API void jhn_lexer_free(jhn_lexer_t * lexer);
 
 /* run/continue a lex. "offset" is an input/output parameter.
    It should be initialized to zero for a
@@ -374,45 +374,45 @@ JHN_API void jhn_lex_free(jhn_lexer lexer);
    This behavior is abstracted from client code except for the performance
    implications which require that the client choose a reasonable chunk
    size to get adequate performance. */
-JHN_API jhn_tok jhn_lex_lex(jhn_lexer lexer, const char *json_text,
-                            size_t length, size_t *offset,
-                            const char **out_buf, size_t *out_len);
+JHN_API jhn_tok jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
+                              size_t length, size_t *offset,
+                              const char **out_buf, size_t *out_len);
 
 /* have a peek at the next token, but don't move the lexer forward */
-JHN_API jhn_tok jhn_lex_peek(jhn_lexer lexer, const char *json_text,
-                             size_t length, size_t offset);
+JHN_API jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
+                               size_t length, size_t offset);
 
 
 typedef enum {
-    jhn_lex_e_ok = 0,
-    jhn_lex_string_invalid_utf8,
-    jhn_lex_string_invalid_escaped_char,
-    jhn_lex_string_invalid_json_char,
-    jhn_lex_string_invalid_hex_char,
-    jhn_lex_invalid_char,
-    jhn_lex_invalid_string,
-    jhn_lex_missing_integer_after_decimal,
-    jhn_lex_missing_integer_after_exponent,
-    jhn_lex_missing_integer_after_minus,
-    jhn_lex_unallowed_comment
-} jhn_lex_error;
+    jhn_lexer_e_ok = 0,
+    jhn_lexer_string_invalid_utf8,
+    jhn_lexer_string_invalid_escaped_char,
+    jhn_lexer_string_invalid_json_char,
+    jhn_lexer_string_invalid_hex_char,
+    jhn_lexer_invalid_char,
+    jhn_lexer_invalid_string,
+    jhn_lexer_missing_integer_after_decimal,
+    jhn_lexer_missing_integer_after_exponent,
+    jhn_lexer_missing_integer_after_minus,
+    jhn_lexer_unallowed_comment
+} jhn_lexer_error_t;
 
 /* converts the given lexer error into a string */
-JHN_API const char *jhn_lex_error_to_string(jhn_lex_error error);
+JHN_API const char *jhn_lexer_error_to_string(jhn_lexer_error_t error);
 
 /* allows access to more specific information about the lexical
    error when jhn_lex_lex returns jhn_tok_error. */
-JHN_API jhn_lex_error jhn_lex_get_error(jhn_lexer lexer);
+JHN_API jhn_lexer_error_t jhn_lexer_get_error(jhn_lexer_t *lexer);
 
 /* get the current offset into the most recently lexed json string. */
-JHN_API size_t jhn_lex_current_offset(jhn_lexer lexer);
+JHN_API size_t jhn_lexer_current_offset(jhn_lexer_t *lexer);
 
 /* get the number of lines lexed by this lexer instance */
-JHN_API size_t jhn_lex_current_line(jhn_lexer lexer);
+JHN_API size_t jhn_lexer_current_line(jhn_lexer_t *lexer);
 
 /* get the number of chars lexed by this lexer instance since the last
    \n or \r */
-JHN_API size_t jhn_lex_current_char(jhn_lexer lexer);
+JHN_API size_t jhn_lexer_current_char(jhn_lexer_t *lexer);
 
 #ifdef __cplusplus
 }

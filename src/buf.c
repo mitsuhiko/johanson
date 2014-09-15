@@ -12,12 +12,12 @@ struct jhn__buf_s {
     size_t len;
     size_t used;
     char *data;
-    jhn_alloc_funcs *alloc;
+    jhn_alloc_funcs_t *alloc;
 };
 
 
 static void
-ensure_available(jhn__buf buf, size_t want)
+ensure_available(jhn__buf_t *buf, size_t want)
 {
     size_t need;
     
@@ -42,17 +42,17 @@ ensure_available(jhn__buf buf, size_t want)
     }
 }
 
-jhn__buf
-jhn__buf_alloc(jhn_alloc_funcs * alloc)
+jhn__buf_t *
+jhn__buf_alloc(jhn_alloc_funcs_t * alloc)
 {
-    jhn__buf b = JO_MALLOC(alloc, sizeof(struct jhn__buf_s));
+    jhn__buf_t *b = JO_MALLOC(alloc, sizeof(struct jhn__buf_s));
     memset(b, 0, sizeof(struct jhn__buf_s));
     b->alloc = alloc;
     return b;
 }
 
 void
-jhn__buf_free(jhn__buf buf)
+jhn__buf_free(jhn__buf_t *buf)
 {
     assert(buf);
     if (buf->data) {
@@ -62,7 +62,7 @@ jhn__buf_free(jhn__buf buf)
 }
 
 void
-jhn__buf_append(jhn__buf buf, const void *data, size_t len)
+jhn__buf_append(jhn__buf_t *buf, const void *data, size_t len)
 {
     ensure_available(buf, len);
     if (len > 0) {
@@ -74,7 +74,7 @@ jhn__buf_append(jhn__buf buf, const void *data, size_t len)
 }
 
 void
-jhn__buf_clear(jhn__buf buf)
+jhn__buf_clear(jhn__buf_t *buf)
 {
     buf->used = 0;
     if (buf->data) {
@@ -83,19 +83,19 @@ jhn__buf_clear(jhn__buf buf)
 }
 
 const char *
-jhn__buf_data(jhn__buf buf)
+jhn__buf_data(jhn__buf_t *buf)
 {
     return buf->data;
 }
 
 size_t
-jhn__buf_len(jhn__buf buf)
+jhn__buf_len(jhn__buf_t *buf)
 {
     return buf->used;
 }
 
 void
-jhn__buf_truncate(jhn__buf buf, size_t len)
+jhn__buf_truncate(jhn__buf_t *buf, size_t len)
 {
     assert(len <= buf->used);
     buf->used = len;

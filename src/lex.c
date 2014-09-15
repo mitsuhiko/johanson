@@ -56,11 +56,11 @@ struct jhn_lexer_s {
     size_t char_off;
 
     /* error */
-    jhn_lex_error error;
+    jhn_lexer_error_t error;
 
     /* a input buffer to handle the case where a token is spread over
      * multiple chunks */
-    jhn__buf buf;
+    jhn__buf_t *buf;
 
     /* in the case where we have data in the lexBuf, buf_off holds
      * the current offset into the lexBuf. */
@@ -75,7 +75,7 @@ struct jhn_lexer_s {
     /* shall we validate utf8 inside strings? */
     unsigned int validate_utf8;
 
-    jhn_alloc_funcs *alloc;
+    jhn_alloc_funcs_t *alloc;
 };
 
 #define read_chr(lxr, txt, off)                      \
@@ -85,12 +85,12 @@ struct jhn_lexer_s {
 
 #define unread_chr(lxr, off) ((*(off) > 0) ? (*(off))-- : ((lxr)->buf_off--))
 
-jhn_lexer
-jhn_lex_alloc(jhn_alloc_funcs *alloc,
+jhn_lexer_t *
+jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
               unsigned int allow_comments, unsigned int validate_utf8)
 {
-    jhn_lexer lxr = (jhn_lexer) JO_MALLOC(alloc, sizeof(struct jhn_lexer_s));
-    memset((void *) lxr, 0, sizeof(struct jhn_lexer_s));
+    jhn_lexer_t *lxr = JO_MALLOC(alloc, sizeof(jhn_lexer_t));
+    memset((void *) lxr, 0, sizeof(jhn_lexer_t));
     lxr->buf = jhn__buf_alloc(alloc);
     lxr->allow_comments = allow_comments;
     lxr->validate_utf8 = validate_utf8;
@@ -99,7 +99,7 @@ jhn_lex_alloc(jhn_alloc_funcs *alloc,
 }
 
 void
-jhn_lex_free(jhn_lexer lxr)
+jhn_lexer_free(jhn_lexer_t *lxr)
 {
     jhn__buf_free(lxr->buf);
     JO_FREE(lxr->alloc, lxr);
@@ -177,7 +177,7 @@ static const char char_lookup_table[256] =
 #define UTF8_CHECK_EOF if (*offset >= length) { return jhn_tok_eof; }
 
 static jhn_tok
-jhn_lex_utf8_char(jhn_lexer lexer, const char *json_text,
+jhn_lexer_utf8_char(jhn_lexer_t *lexer, const char *json_text,
                   size_t length, size_t *offset,
                   char chr)
 {
@@ -251,7 +251,7 @@ jhn_string_scan(const char * buf, size_t len, int utf8check)
 }
 
 static jhn_tok
-jhn_lex_string(jhn_lexer lexer, const char * json_text,
+jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
                 size_t length, size_t * offset)
 {
     jhn_tok tok = jhn_tok_error;
@@ -307,14 +307,14 @@ jhn_lex_string(jhn_lexer lexer, const char * json_text,
                     if (!(char_lookup_table[(unsigned char)cur_chr] & VHC)) {
                         /* back up to offending char */
                         unread_chr(lexer, offset);
-                        lexer->error = jhn_lex_string_invalid_hex_char;
+                        lexer->error = jhn_lexer_string_invalid_hex_char;
                         goto finish_string_lex;
                     }
                 }
             } else if (!(char_lookup_table[(unsigned char)cur_chr] & VEC)) {
                 /* back up to offending char */
                 unread_chr(lexer, offset);
-                lexer->error = jhn_lex_string_invalid_escaped_char;
+                lexer->error = jhn_lexer_string_invalid_escaped_char;
                 goto finish_string_lex;
             }
         }
@@ -323,19 +323,19 @@ jhn_lex_string(jhn_lexer lexer, const char * json_text,
         else if (char_lookup_table[(unsigned char)cur_chr] & IJC) {
             /* back up to offending char */
             unread_chr(lexer, offset);
-            lexer->error = jhn_lex_string_invalid_json_char;
+            lexer->error = jhn_lexer_string_invalid_json_char;
             goto finish_string_lex;
         }
         /* when in validate UTF8 mode we need to do some extra work */
         else if (lexer->validate_utf8) {
-            jhn_tok t = jhn_lex_utf8_char(lexer, json_text, length,
+            jhn_tok t = jhn_lexer_utf8_char(lexer, json_text, length,
                                           offset, cur_chr);
 
             if (t == jhn_tok_eof) {
                 tok = jhn_tok_eof;
                 goto finish_string_lex;
             } else if (t == jhn_tok_error) {
-                lexer->error = jhn_lex_string_invalid_utf8;
+                lexer->error = jhn_lexer_string_invalid_utf8;
                 goto finish_string_lex;
             }
         }
@@ -354,7 +354,7 @@ jhn_lex_string(jhn_lexer lexer, const char * json_text,
 #define RETURN_IF_EOF if (*offset >= length) return jhn_tok_eof;
 
 static jhn_tok
-jhn_lex_number(jhn_lexer lexer, const char * json_text,
+jhn_lexer_number(jhn_lexer_t *lexer, const char * json_text,
                 size_t length, size_t * offset)
 {
     /* XXX: numbers are the only entities in json that we must lex
@@ -385,7 +385,7 @@ jhn_lex_number(jhn_lexer lexer, const char * json_text,
         } while (c >= '0' && c <= '9');
     } else {
         unread_chr(lexer, offset);
-        lexer->error = jhn_lex_missing_integer_after_minus;
+        lexer->error = jhn_lexer_missing_integer_after_minus;
         return jhn_tok_error;
     }
 
@@ -404,7 +404,7 @@ jhn_lex_number(jhn_lexer lexer, const char * json_text,
 
         if (!numRd) {
             unread_chr(lexer, offset);
-            lexer->error = jhn_lex_missing_integer_after_decimal;
+            lexer->error = jhn_lexer_missing_integer_after_decimal;
             return jhn_tok_error;
         }
         tok = jhn_tok_double;
@@ -428,7 +428,7 @@ jhn_lex_number(jhn_lexer lexer, const char * json_text,
             } while (c >= '0' && c <= '9');
         } else {
             unread_chr(lexer, offset);
-            lexer->error = jhn_lex_missing_integer_after_exponent;
+            lexer->error = jhn_lexer_missing_integer_after_exponent;
             return jhn_tok_error;
         }
         tok = jhn_tok_double;
@@ -441,7 +441,7 @@ jhn_lex_number(jhn_lexer lexer, const char * json_text,
 }
 
 static jhn_tok
-jhn_lex_comment(jhn_lexer lexer, const char *json_text,
+jhn_lexer_comment(jhn_lexer_t *lexer, const char *json_text,
                 size_t length, size_t *offset)
 {
     char c;
@@ -474,7 +474,7 @@ jhn_lex_comment(jhn_lexer lexer, const char *json_text,
             }
         }
     } else {
-        lexer->error = jhn_lex_invalid_char;
+        lexer->error = jhn_lexer_invalid_char;
         tok = jhn_tok_error;
     }
 
@@ -482,7 +482,7 @@ jhn_lex_comment(jhn_lexer lexer, const char *json_text,
 }
 
 jhn_tok
-jhn_lex_lex(jhn_lexer lexer, const char *json_text,
+jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
              size_t length, size_t *offset,
              const char **out_buf, size_t *out_len)
 {
@@ -535,7 +535,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                 c = read_chr(lexer, json_text, offset);
                 if (c != *want) {
                     unread_chr(lexer, offset);
-                    lexer->error = jhn_lex_invalid_string;
+                    lexer->error = jhn_lexer_invalid_string;
                     tok = jhn_tok_error;
                     goto lexed;
                 }
@@ -553,7 +553,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                 c = read_chr(lexer, json_text, offset);
                 if (c != *want) {
                     unread_chr(lexer, offset);
-                    lexer->error = jhn_lex_invalid_string;
+                    lexer->error = jhn_lexer_invalid_string;
                     tok = jhn_tok_error;
                     goto lexed;
                 }
@@ -571,7 +571,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                 c = read_chr(lexer, json_text, offset);
                 if (c != *want) {
                     unread_chr(lexer, offset);
-                    lexer->error = jhn_lex_invalid_string;
+                    lexer->error = jhn_lexer_invalid_string;
                     tok = jhn_tok_error;
                     goto lexed;
                 }
@@ -580,7 +580,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
             goto lexed;
         }
         case '"': {
-            tok = jhn_lex_string(lexer, (const char *)json_text,
+            tok = jhn_lexer_string(lexer, (const char *)json_text,
                                  length, offset);
             goto lexed;
         }
@@ -589,7 +589,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
         case '5': case '6': case '7': case '8': case '9': {
             /* integer parsing wants to start from the beginning */
             unread_chr(lexer, offset);
-            tok = jhn_lex_number(lexer, (const char *)json_text,
+            tok = jhn_lexer_number(lexer, (const char *)json_text,
                                  length, offset);
             goto lexed;
         }
@@ -598,7 +598,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                it's an error. */
             if (!lexer->allow_comments) {
                 unread_chr(lexer, offset);
-                lexer->error = jhn_lex_unallowed_comment;
+                lexer->error = jhn_lexer_unallowed_comment;
                 tok = jhn_tok_error;
                 goto lexed;
             }
@@ -608,7 +608,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
                - malformed comment opening (slash not followed by
                  '*' or '/') (tok_error)
                - eof hit. (tok_eof) */
-            tok = jhn_lex_comment(lexer, (const char *)json_text,
+            tok = jhn_lexer_comment(lexer, (const char *)json_text,
                                   length, offset);
             if (tok == jhn_tok_comment) {
                 /* "error" is silly, but that's the initial
@@ -622,7 +622,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
             /* hit error or eof, bail */
             goto lexed;
         default:
-            lexer->error = jhn_lex_invalid_char;
+            lexer->error = jhn_lexer_invalid_char;
             tok = jhn_tok_error;
             goto lexed;
         }
@@ -660,7 +660,7 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
 #ifdef JHN_LEXER_DEBUG
     if (tok == jhn_tok_error) {
         printf("lexical error: %s\n",
-               jhn_lex_error_to_string(jhn_lex_get_error(lexer)));
+               jhn_lexer_error_to_string(jhn_lexer_get_error(lexer)));
     } else if (tok == jhn_tok_eof) {
         printf("EOF hit\n");
     } else {
@@ -674,34 +674,34 @@ jhn_lex_lex(jhn_lexer lexer, const char *json_text,
 }
 
 const char *
-jhn_lex_error_to_string(jhn_lex_error error)
+jhn_lexer_error_to_string(jhn_lexer_error_t error)
 {
     switch (error) {
-    case jhn_lex_e_ok:
+    case jhn_lexer_e_ok:
         return "ok, no error";
-    case jhn_lex_string_invalid_utf8:
+    case jhn_lexer_string_invalid_utf8:
         return "invalid bytes in UTF8 string.";
-    case jhn_lex_string_invalid_escaped_char:
+    case jhn_lexer_string_invalid_escaped_char:
         return "inside a string, '\\' occurs before a character "
                "which it may not.";
-    case jhn_lex_string_invalid_json_char:
+    case jhn_lexer_string_invalid_json_char:
         return "invalid character inside string.";
-    case jhn_lex_string_invalid_hex_char:
+    case jhn_lexer_string_invalid_hex_char:
         return "invalid (non-hex) character occurs after '\\u' inside "
                "string.";
-    case jhn_lex_invalid_char:
+    case jhn_lexer_invalid_char:
         return "invalid char in json text.";
-    case jhn_lex_invalid_string:
+    case jhn_lexer_invalid_string:
         return "invalid string in json text.";
-    case jhn_lex_missing_integer_after_exponent:
+    case jhn_lexer_missing_integer_after_exponent:
         return "malformed number, a digit is required after the exponent.";
-    case jhn_lex_missing_integer_after_decimal:
+    case jhn_lexer_missing_integer_after_decimal:
         return "malformed number, a digit is required after the "
                "decimal point.";
-    case jhn_lex_missing_integer_after_minus:
+    case jhn_lexer_missing_integer_after_minus:
         return "malformed number, a digit is required after the "
                "minus sign.";
-    case jhn_lex_unallowed_comment:
+    case jhn_lexer_unallowed_comment:
         return "probable comment found in input text, comments are "
                "not enabled.";
     default:
@@ -711,26 +711,26 @@ jhn_lex_error_to_string(jhn_lex_error error)
 
 
 /** allows access to more specific information about the lexical
- *  error when jhn_lex_lex returns jhn_tok_error. */
-jhn_lex_error
-jhn_lex_get_error(jhn_lexer lexer)
+ *  error when jhn_lexer_lex returns jhn_tok_error. */
+jhn_lexer_error_t
+jhn_lexer_get_error(jhn_lexer_t *lexer)
 {
     if (lexer == NULL)
-        return (jhn_lex_error)-1;
+        return (jhn_lexer_error_t)-1;
     return lexer->error;
 }
 
-size_t jhn_lex_current_line(jhn_lexer lexer)
+size_t jhn_lexer_current_line(jhn_lexer_t *lexer)
 {
     return lexer->line_off;
 }
 
-size_t jhn_lex_current_char(jhn_lexer lexer)
+size_t jhn_lexer_current_char(jhn_lexer_t *lexer)
 {
     return lexer->char_off;
 }
 
-jhn_tok jhn_lex_peek(jhn_lexer lexer, const char *json_text,
+jhn_tok jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
                      size_t length, size_t offset)
 {
     const char * out_buf;
@@ -740,7 +740,7 @@ jhn_tok jhn_lex_peek(jhn_lexer lexer, const char *json_text,
     unsigned int buf_in_use = lexer->buf_in_use;
     jhn_tok tok;
 
-    tok = jhn_lex_lex(lexer, json_text, length, &offset,
+    tok = jhn_lexer_lex(lexer, json_text, length, &offset,
                       &out_buf, &out_len);
 
     lexer->buf_off = buf_off;

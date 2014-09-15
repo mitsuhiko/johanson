@@ -10,7 +10,7 @@ typedef struct jhn_bytestack_t
     unsigned char * stack;
     size_t size;
     size_t used;
-    jhn_alloc_funcs * yaf;
+    jhn_alloc_funcs_t * yaf;
 } jhn_bytestack;
 
 /* initialize a bytestack */

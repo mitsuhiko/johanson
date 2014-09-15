@@ -144,7 +144,7 @@ static void usage(const char *progname)
 int
 main(int argc, char ** argv)
 {
-    jhn_parser hand;
+    jhn_parser_t *hand;
     const char *filename = NULL;
     static char * file_data = NULL;
     FILE *file;
@@ -159,7 +159,7 @@ main(int argc, char ** argv)
 
     /* memory allocation debugging: allocate a structure which holds
      * allocation routines */
-    jhn_alloc_funcs alloc_funcs = {
+    jhn_alloc_funcs_t alloc_funcs = {
         test_malloc,
         test_realloc,
         test_free,

@@ -35,11 +35,11 @@ struct jhn_gen_s {
     jhn_print_t print;
     void *ctx;
     /* memory allocation routines */
-    jhn_alloc_funcs alloc;
+    jhn_alloc_funcs_t alloc;
 };
 
 int
-jhn_gen_config(jhn_gen g, jhn_gen_option opt, ...)
+jhn_gen_config(jhn_gen_t *g, jhn_gen_option opt, ...)
 {
     int rv = 1;
     va_list ap;
@@ -85,11 +85,11 @@ jhn_gen_config(jhn_gen g, jhn_gen_option opt, ...)
 
 
 
-jhn_gen
-jhn_gen_alloc(const jhn_alloc_funcs *afs)
+jhn_gen_t *
+jhn_gen_alloc(const jhn_alloc_funcs_t *afs)
 {
-    jhn_gen g = NULL;
-    jhn_alloc_funcs afs_buffer;
+    jhn_gen_t *g = NULL;
+    jhn_alloc_funcs_t afs_buffer;
 
     /* first order of business is to set up memory allocation routines */
     if (afs != NULL) {
@@ -107,7 +107,7 @@ jhn_gen_alloc(const jhn_alloc_funcs *afs)
 
     memset((void *)g, 0, sizeof(struct jhn_gen_s));
     /* copy in pointers to allocation routines */
-    memcpy((void *)&(g->alloc), (void *)afs, sizeof(jhn_alloc_funcs));
+    memcpy((void *)&(g->alloc), (void *)afs, sizeof(jhn_alloc_funcs_t));
 
     g->print = (jhn_print_t)&jhn__buf_append;
     g->ctx = jhn__buf_alloc(&(g->alloc));
@@ -117,7 +117,7 @@ jhn_gen_alloc(const jhn_alloc_funcs *afs)
 }
 
 void
-jhn_gen_reset(jhn_gen g, const char * sep)
+jhn_gen_reset(jhn_gen_t *g, const char * sep)
 {
     g->depth = 0;
     memset((void *) &(g->state), 0, sizeof(g->state));
@@ -127,11 +127,11 @@ jhn_gen_reset(jhn_gen g, const char * sep)
 }
 
 void
-jhn_gen_free(jhn_gen g)
+jhn_gen_free(jhn_gen_t *g)
 {
     if (g) {
         if (g->print == (jhn_print_t)&jhn__buf_append) {
-            jhn__buf_free((jhn__buf)g->ctx);
+            jhn__buf_free((jhn__buf_t *)g->ctx);
         }
         JO_FREE(&(g->alloc), g);
     }
@@ -203,7 +203,7 @@ jhn_gen_free(jhn_gen g)
         g->print(g->ctx, "\n", 1);
 
 jhn_gen_status
-jhn_gen_integer(jhn_gen g, long long int number)
+jhn_gen_integer(jhn_gen_t *g, long long int number)
 {
     char i[32];
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
@@ -221,7 +221,7 @@ jhn_gen_integer(jhn_gen g, long long int number)
 #endif
 
 jhn_gen_status
-jhn_gen_double(jhn_gen g, double number)
+jhn_gen_double(jhn_gen_t *g, double number)
 {
     char i[32];
     ENSURE_VALID_STATE; ENSURE_NOT_KEY;
@@ -240,7 +240,7 @@ jhn_gen_double(jhn_gen g, double number)
 }
 
 jhn_gen_status
-jhn_gen_number(jhn_gen g, const char *s, size_t l)
+jhn_gen_number(jhn_gen_t *g, const char *s, size_t l)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     g->print(g->ctx, s, l);
@@ -250,7 +250,7 @@ jhn_gen_number(jhn_gen g, const char *s, size_t l)
 }
 
 jhn_gen_status
-jhn_gen_string(jhn_gen g, const char *str, size_t len)
+jhn_gen_string(jhn_gen_t *g, const char *str, size_t len)
 {
     // if validation is enabled, check that the string is valid utf8
     // XXX: This checking could be done a little faster, in the same pass as
@@ -270,7 +270,7 @@ jhn_gen_string(jhn_gen g, const char *str, size_t len)
 }
 
 jhn_gen_status
-jhn_gen_null(jhn_gen g)
+jhn_gen_null(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     g->print(g->ctx, "null", strlen("null"));
@@ -280,7 +280,7 @@ jhn_gen_null(jhn_gen g)
 }
 
 jhn_gen_status
-jhn_gen_bool(jhn_gen g, int boolean)
+jhn_gen_bool(jhn_gen_t *g, int boolean)
 {
     const char *val = boolean ? "true" : "false";
 
@@ -292,7 +292,7 @@ jhn_gen_bool(jhn_gen g, int boolean)
 }
 
 jhn_gen_status
-jhn_gen_map_open(jhn_gen g)
+jhn_gen_map_open(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     INCREMENT_DEPTH;
@@ -307,7 +307,7 @@ jhn_gen_map_open(jhn_gen g)
 }
 
 jhn_gen_status
-jhn_gen_map_close(jhn_gen g)
+jhn_gen_map_close(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE;
     DECREMENT_DEPTH;
@@ -323,7 +323,7 @@ jhn_gen_map_close(jhn_gen g)
 }
 
 jhn_gen_status
-jhn_gen_array_open(jhn_gen g)
+jhn_gen_array_open(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE; ENSURE_NOT_KEY; INSERT_SEP; INSERT_WHITESPACE;
     INCREMENT_DEPTH;
@@ -337,7 +337,7 @@ jhn_gen_array_open(jhn_gen g)
 }
 
 jhn_gen_status
-jhn_gen_array_close(jhn_gen g)
+jhn_gen_array_close(jhn_gen_t *g)
 {
     ENSURE_VALID_STATE;
     DECREMENT_DEPTH;
@@ -352,20 +352,20 @@ jhn_gen_array_close(jhn_gen g)
 }
 
 jhn_gen_status
-jhn_gen_get_buf(jhn_gen g, const char **buf, size_t *len)
+jhn_gen_get_buf(jhn_gen_t *g, const char **buf, size_t *len)
 {
     if (g->print != (jhn_print_t)&jhn__buf_append) {
         return jhn_gen_no_buf;
     }
-    *buf = jhn__buf_data((jhn__buf)g->ctx);
-    *len = jhn__buf_len((jhn__buf)g->ctx);
+    *buf = jhn__buf_data((jhn__buf_t *)g->ctx);
+    *len = jhn__buf_len((jhn__buf_t *)g->ctx);
     return jhn_gen_status_ok;
 }
 
 void
-jhn_gen_clear(jhn_gen g)
+jhn_gen_clear(jhn_gen_t *g)
 {
     if (g->print == (jhn_print_t)&jhn__buf_append) {
-        jhn__buf_clear((jhn__buf)g->ctx);
+        jhn__buf_clear((jhn__buf_t *)g->ctx);
     }
 }

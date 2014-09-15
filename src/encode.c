@@ -104,7 +104,7 @@ utf32_to_utf8(unsigned int codepoint, char *utf8_buf)
 }
 
 void
-jhn__string_decode(jhn__buf buf, const char *str, size_t len)
+jhn__string_decode(jhn__buf_t *buf, const char *str, size_t len)
 {
     size_t beg = 0;
     size_t end = 0;    

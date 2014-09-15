@@ -34,18 +34,18 @@ typedef enum {
 struct jhn_parser_s {
     const jhn_parser_callbacks *callbacks;
     void *ctx;
-    jhn_lexer lexer;
+    jhn_lexer_t *lexer;
     const char *parse_error;
     /* the number of bytes consumed from the last client buffer,
      * in the case of an error this will be an error offset, in the
      * case of an error this can be used as the error offset */
     size_t bytes_consumed;
     /* temporary storage for decoded strings */
-    jhn__buf decode_buf;
+    jhn__buf_t *decode_buf;
     /* a stack of states.  access with jhn_state_XXX routines */
     jhn_bytestack state_stack;
     /* memory allocation routines */
-    jhn_alloc_funcs alloc;
+    jhn_alloc_funcs_t alloc;
     /* bitfield */
     unsigned int flags;
 };
@@ -82,7 +82,7 @@ parse_integer(const char *number, unsigned int length)
 }
 
 static char *
-render_error_string(jhn_parser hand, const char *json_text,
+render_error_string(jhn_parser_t *hand, const char *json_text,
                         size_t length, int verbose)
 {
     size_t offset = hand->bytes_consumed;
@@ -97,7 +97,7 @@ render_error_string(jhn_parser hand, const char *json_text,
         error_text = hand->parse_error;
     } else if (jhn_bs_current(hand->state_stack) == jhn_state_lexical_error) {
         error_type = "lexical";
-        error_text = jhn_lex_error_to_string(jhn_lex_get_error(hand->lexer));
+        error_text = jhn_lexer_error_to_string(jhn_lexer_get_error(hand->lexer));
     } else {
         error_type = "unknown";
     }
@@ -178,7 +178,7 @@ render_error_string(jhn_parser hand, const char *json_text,
 
 
 static jhn_parser_status
-do_parse(jhn_parser hand, const char *json_text, size_t length)
+do_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 {
     jhn_tok tok;
     const char * buf;
@@ -196,7 +196,7 @@ around_again:
         }
         if (!(hand->flags & jhn_allow_trailing_garbage)) {
             if (*offset != length) {
-                tok = jhn_lex_lex(hand->lexer, json_text, length,
+                tok = jhn_lexer_lex(hand->lexer, json_text, length,
                                    offset, &buf, &bufLen);
                 if (tok != jhn_tok_eof) {
                     jhn_bs_set(hand->state_stack, jhn_state_parse_error);
@@ -223,7 +223,7 @@ around_again:
 
         jhn_state stateToPush = jhn_state_start;
 
-        tok = jhn_lex_lex(hand->lexer, json_text, length,
+        tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
 
         switch (tok) {
@@ -372,7 +372,7 @@ around_again:
         /* only difference between these two states is that in
          * start '}' is valid, whereas in need_key, we've parsed
          * a comma, and a string key _must_ follow */
-        tok = jhn_lex_lex(hand->lexer, json_text, length,
+        tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
             case jhn_tok_eof:
@@ -413,7 +413,7 @@ around_again:
         }
     }
     case jhn_state_map_sep: {
-        tok = jhn_lex_lex(hand->lexer, json_text, length,
+        tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
             case jhn_tok_colon:
@@ -432,7 +432,7 @@ around_again:
         }
     }
     case jhn_state_map_got_val: {
-        tok = jhn_lex_lex(hand->lexer, json_text, length,
+        tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
             case jhn_tok_right_bracket:
@@ -460,7 +460,7 @@ around_again:
         }
     }
     case jhn_state_array_got_val: {
-        tok = jhn_lex_lex(hand->lexer, json_text, length,
+        tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
             case jhn_tok_right_brace:
@@ -490,7 +490,7 @@ around_again:
 }
 
 static jhn_parser_status
-do_finish(jhn_parser hand)
+do_finish(jhn_parser_t *hand)
 {
     jhn_parser_status stat;
     stat = do_parse(hand, " ",1);
@@ -533,12 +533,12 @@ jhn_parser_status_to_string(jhn_parser_status stat)
     }
 }
 
-jhn_parser
+jhn_parser_t *
 jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
-                 jhn_alloc_funcs *afs, void *ctx)
+                 jhn_alloc_funcs_t *afs, void *ctx)
 {
-    jhn_parser hand = NULL;
-    jhn_alloc_funcs afs_buffer;
+    jhn_parser_t *hand = NULL;
+    jhn_alloc_funcs_t afs_buffer;
 
     /* first order of business is to set up memory allocation routines */
     if (afs) {
@@ -550,10 +550,10 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
         afs = &afs_buffer;
     }
 
-    hand = JO_MALLOC(afs, sizeof(struct jhn_parser_s));
+    hand = JO_MALLOC(afs, sizeof(jhn_parser_t));
 
     /* copy in pointers to allocation routines */
-    memcpy((void *)&(hand->alloc), (void *)afs, sizeof(jhn_alloc_funcs));
+    memcpy((void *)&(hand->alloc), (void *)afs, sizeof(jhn_alloc_funcs_t));
 
     hand->callbacks = callbacks;
     hand->ctx = ctx;
@@ -568,7 +568,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
 }
 
 int
-jhn_parser_config(jhn_parser h, jhn_parser_option opt, ...)
+jhn_parser_config(jhn_parser_t *h, jhn_parser_option opt, ...)
 {
     int rv = 1;
     va_list ap;
@@ -595,13 +595,13 @@ jhn_parser_config(jhn_parser h, jhn_parser_option opt, ...)
 }
 
 void
-jhn_parser_free(jhn_parser handle)
+jhn_parser_free(jhn_parser_t *handle)
 {
     if (handle) {
         jhn_bs_free(handle->state_stack);
         jhn__buf_free(handle->decode_buf);
         if (handle->lexer) {
-            jhn_lex_free(handle->lexer);
+            jhn_lexer_free(handle->lexer);
             handle->lexer = NULL;
         }
         JO_FREE(&(handle->alloc), handle);
@@ -609,13 +609,13 @@ jhn_parser_free(jhn_parser handle)
 }
 
 jhn_parser_status
-jhn_parser_parse(jhn_parser hand, const char *json_text, size_t length)
+jhn_parser_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 {
     jhn_parser_status status;
 
     /* lazy allocation of the lexer */
     if (hand->lexer == NULL) {
-        hand->lexer = jhn_lex_alloc(&(hand->alloc),
+        hand->lexer = jhn_lexer_alloc(&(hand->alloc),
                                     hand->flags & jhn_allow_comments,
                                     !(hand->flags & jhn_dont_validate_strings));
     }
@@ -626,7 +626,7 @@ jhn_parser_parse(jhn_parser hand, const char *json_text, size_t length)
 
 
 jhn_parser_status
-jhn_parser_finish(jhn_parser hand)
+jhn_parser_finish(jhn_parser_t *hand)
 {
     /* The lexer is lazy allocated in the first call to parse.  if parse is
      * never called, then no data was provided to parse at all.  This is a
@@ -635,7 +635,7 @@ jhn_parser_finish(jhn_parser hand)
      * case while preserving all the other semantics of the parser
      * (multiple values, partial values, etc). */
     if (hand->lexer == NULL) {
-        hand->lexer = jhn_lex_alloc(&(hand->alloc),
+        hand->lexer = jhn_lexer_alloc(&(hand->alloc),
                                      hand->flags & jhn_allow_comments,
                                      !(hand->flags & jhn_dont_validate_strings));
     }
@@ -644,14 +644,14 @@ jhn_parser_finish(jhn_parser hand)
 }
 
 char *
-jhn_parser_get_error(jhn_parser hand, int verbose,
+jhn_parser_get_error(jhn_parser_t *hand, int verbose,
                      const char *json_text, size_t length)
 {
     return render_error_string(hand, json_text, length, verbose);
 }
 
 size_t
-jhn_parser_get_bytes_consumed(jhn_parser hand)
+jhn_parser_get_bytes_consumed(jhn_parser_t *hand)
 {
     if (!hand)
         return 0;
@@ -659,7 +659,7 @@ jhn_parser_get_bytes_consumed(jhn_parser hand)
 }
 
 void
-jhn_parser_free_error(jhn_parser hand, char *str)
+jhn_parser_free_error(jhn_parser_t *hand, char *str)
 {
     JO_FREE(&(hand->alloc), str);
 }

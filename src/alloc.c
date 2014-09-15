@@ -22,7 +22,7 @@ static void internal_free(void *ctx, void *ptr)
     free(ptr);
 }
 
-void jhn__set_default_alloc_funcs(jhn_alloc_funcs *af)
+void jhn__set_default_alloc_funcs(jhn_alloc_funcs_t *af)
 {
     af->malloc_func = internal_malloc;
     af->free_func = internal_free;

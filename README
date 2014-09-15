@@ -1,0 +1,33 @@
+
+   |''||''|        '||                                            
+      ||            ||                                            
+      ||    .|''|,  ||''|,  '''|.  `||''|,  ('''' .|''|, `||''|,  
+      ||    ||  ||  ||  || .|''||   ||  ||   `'') ||  ||  ||  ||  
+   '..|'    `|..|' .||  || `|..||. .||  ||. `...' `|..|' .||  ||. 
+  
+     -- a simple, iterative JSON library for C for easy embedding
+
+
+   Johanson is a hard fork of the YAJL2 library by Lloyd Hilaiel.  I needed
+   to modify the library in a few ways to acomodate a specific use I had
+   which was to embed YAJL into another application and to use some of the
+   internals.
+
+   Primarily the difference between Johanson and YAJL:
+
+     - johanson uses ``char *``, YAJL uses ``unsigned char *``.
+     - johanson exposes the lexer, YAJL does not.
+     - johanson has differently named symbols than YAJL
+     - johanson does not provide a version information (yet?)
+     - johanson does not have a tree (removed because it did not work
+       with the YAJL allocation routines)
+     - johanson can be easily compiled without CMake/premake etc.
+     - johanson is differently structured internally for easier
+       development.  You do not need a specific build tool for it to
+       find the headers and the headers were refactored to be fewer.
+
+   Other than that it is MIT licensed like you would expect.
+
+   For building a premake4 file is included, but there is nothing special
+   that needs to be defined, just build them as you feel fit.
+

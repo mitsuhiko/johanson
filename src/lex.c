@@ -50,7 +50,7 @@ tokToStr(jhn_tok tok)
  * before pulling chars from input text
  */
 
-struct jhn_lexer_t {
+struct jhn_lexer_s {
     /* the overal line and char offset into the data */
     size_t line_off;
     size_t char_off;
@@ -89,8 +89,8 @@ jhn_lexer
 jhn_lex_alloc(jhn_alloc_funcs *alloc,
               unsigned int allow_comments, unsigned int validate_utf8)
 {
-    jhn_lexer lxr = (jhn_lexer) JO_MALLOC(alloc, sizeof(struct jhn_lexer_t));
-    memset((void *) lxr, 0, sizeof(struct jhn_lexer_t));
+    jhn_lexer lxr = (jhn_lexer) JO_MALLOC(alloc, sizeof(struct jhn_lexer_s));
+    memset((void *) lxr, 0, sizeof(struct jhn_lexer_s));
     lxr->buf = jhn_buf_alloc(alloc);
     lxr->allow_comments = allow_comments;
     lxr->validate_utf8 = validate_utf8;

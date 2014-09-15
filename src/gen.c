@@ -27,7 +27,7 @@ typedef enum {
     jhn_gen_error
 } jhn_gen_state;
 
-struct jhn_gen_t {
+struct jhn_gen_s {
     unsigned int flags;
     unsigned int depth;
     const char * indentString;
@@ -101,11 +101,11 @@ jhn_gen_alloc(const jhn_alloc_funcs *afs)
         afs = &afs_buffer;
     }
 
-    g = JO_MALLOC(afs, sizeof(struct jhn_gen_t));
+    g = JO_MALLOC(afs, sizeof(struct jhn_gen_s));
     if (!g)
         return NULL;
 
-    memset((void *)g, 0, sizeof(struct jhn_gen_t));
+    memset((void *)g, 0, sizeof(struct jhn_gen_s));
     /* copy in pointers to allocation routines */
     memcpy((void *)&(g->alloc), (void *)afs, sizeof(jhn_alloc_funcs));
 

@@ -85,7 +85,7 @@ typedef enum {
 } jhn_gen_status;
 
 /* an opaque handle to a generator */
-typedef struct jhn_gen_t *jhn_gen;
+typedef struct jhn_gen_s *jhn_gen;
 
 /* a callback used for "printing" the results. */
 typedef void (*jhn_print_t)(void *ctx, const char *str, size_t len);
@@ -176,16 +176,16 @@ JHN_API void jhn_gen_reset(jhn_gen hand, const char *sep);
 /* error codes returned from this interface */
 typedef enum {
     /* no error was encountered */
-    jhn_status_ok,
+    jhn_parser_status_ok,
     /* a client callback returned zero, stopping the parse */
-    jhn_status_client_canceled,
+    jhn_parser_status_client_cancelled,
     /* An error occured during the parse.  Call jhn_parser_get_error for
        more information about the encountered error */
-    jhn_status_error
-} jhn_status;
+    jhn_parser_status_error
+} jhn_parser_status;
 
 /* attain a human readable, english, string for an error */
-JHN_API const char *jhn_status_to_string(jhn_status code);
+JHN_API const char *jhn_parser_status_to_string(jhn_parser_status code);
 
 /* an opaque handle to a parser */
 typedef struct jhn_parser_s *jhn_parser;
@@ -199,7 +199,7 @@ typedef struct jhn_parser_s *jhn_parser;
  
    All callbacks return an integer.  If non-zero, the parse will
    continue.  If zero, the parse will be canceled and
-   jhn_status_client_canceled will be returned from the parse.
+   jhn_parser_status_client_cancelled will be returned from the parse.
  
      A note about the handling of numbers:
  
@@ -295,7 +295,7 @@ JHN_API void jhn_parser_free(jhn_parser handle);
 /* Parse some json!
    json_text - a pointer to the UTF8 json text to be parsed
    length - the length, in bytes, of input text */
-JHN_API jhn_status jhn_parser_parse(jhn_parser hand,
+JHN_API jhn_parser_status jhn_parser_parse(jhn_parser hand,
                                     const char *json_text,
                                     size_t length);
 
@@ -305,7 +305,7 @@ JHN_API jhn_status jhn_parser_parse(jhn_parser hand,
    stream is valid or not.  For example, if "1" has been fed in,
    jhn can't know whether another digit is next or some character
    that would terminate the integer token. */
-JHN_API jhn_status jhn_parser_finish(jhn_parser hand);
+JHN_API jhn_parser_status jhn_parser_finish(jhn_parser hand);
 
 /* get an error string describing the state of the parse.
  
@@ -353,7 +353,7 @@ typedef enum {
     jhn_tok_comment
 } jhn_tok;
 
-typedef struct jhn_lexer_t *jhn_lexer;
+typedef struct jhn_lexer_s *jhn_lexer;
 
 /* allocates a lexer handle */
 JHN_API jhn_lexer jhn_lex_alloc(jhn_alloc_funcs *alloc,

@@ -149,7 +149,7 @@ main(int argc, char ** argv)
     static char * file_data = NULL;
     FILE *file;
     size_t buf_size = BUF_SIZE;
-    jhn_status stat;
+    jhn_parser_status stat;
     size_t rd;
     int i, j;
 
@@ -232,11 +232,11 @@ main(int argc, char ** argv)
         /* read file data, now pass to parser */
         stat = jhn_parser_parse(hand, file_data, rd);
 
-        if (stat != jhn_status_ok) break;
+        if (stat != jhn_parser_status_ok) break;
     }
 
     stat = jhn_parser_finish(hand);
-    if (stat != jhn_status_ok) {
+    if (stat != jhn_parser_status_ok) {
         char *str = jhn_parser_get_error(hand, 0, file_data, rd);
         fflush(stdout);
         fprintf(stderr, "%s", str);

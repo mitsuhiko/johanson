@@ -42,17 +42,4 @@ struct jhn_parser_s {
     unsigned int flags;
 };
 
-jhn_status jhn_do_parse(jhn_parser handle, const char *json_text,
-                        size_t length);
-
-jhn_status jhn_do_finish(jhn_parser handle);
-
-char *jhn_render_error_string(jhn_parser hand, const char *json_text,
-                              size_t length, int verbose);
-
-/* A little built in integer parsing routine with the same semantics as strtol
- * that's unaffected by LOCALE. */
-long long jhn_parse_integer(const char *number, unsigned int length);
-
-
 #endif

@@ -95,7 +95,7 @@ jhn_gen_alloc(const jhn_alloc_funcs_t *afs)
 
     g->print = (jhn_print_t)&jhn__buf_append;
     g->ctx = jhn__buf_alloc(&(g->alloc));
-    g->indent_string = "    ";
+    g->indent_string = "  ";
 
     return g;
 }

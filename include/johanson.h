@@ -101,7 +101,7 @@ typedef enum {
     jhn_gen_beautify = 0x01,
     /* Set an indent string which is used when jhn_gen_beautify
        is enabled.  Maybe something like \t or some number of
-       spaces.  The default is four spaces ' '. */
+       spaces.  The default is two spaces ' '. */
     jhn_gen_indent_string = 0x02,
     /* Set a function and context argument that should be used to
        output generated json.  the function should conform to the

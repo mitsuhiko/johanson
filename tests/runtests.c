@@ -14,22 +14,25 @@ typedef struct
 
 #define TEST_CTX(vptr) ((jhn_test_memory_ctx *)(vptr))
 
-static void test_free(void * ctx, void * ptr)
+static void test_free(void *ctx, void * ptr)
 {
+    (void)ctx;
     assert(ptr != NULL);
     TEST_CTX(ctx)->num_frees++;
     free(ptr);
 }
 
-static void *test_malloc(void * ctx, size_t sz)
+static void *test_malloc(void *ctx, size_t sz)
 {
+    (void)ctx;
     assert(sz != 0);
     TEST_CTX(ctx)->num_mallocs++;
     return malloc(sz);
 }
 
-static void *test_realloc(void * ctx, void * ptr, size_t sz)
+static void *test_realloc(void *ctx, void *ptr, size_t sz)
 {
+    (void)ctx;
     if (ptr == NULL) {
         assert(sz != 0);
         TEST_CTX(ctx)->num_mallocs++;
@@ -46,30 +49,35 @@ static void *test_realloc(void * ctx, void * ptr, size_t sz)
 
 static int test_jhn_null(void *ctx)
 {
+    (void)ctx;
     printf("null\n");
     return 1;
 }
 
-static int test_jhn_boolean(void * ctx, int val)
+static int test_jhn_boolean(void *ctx, int val)
 {
+    (void)ctx;
     printf("bool: %s\n", val ? "true" : "false");
     return 1;
 }
 
 static int test_jhn_integer(void *ctx, long long val)
 {
+    (void)ctx;
     printf("integer: %lld\n", val);
     return 1;
 }
 
 static int test_jhn_double(void *ctx, double val)
 {
+    (void)ctx;
     printf("double: %g\n", val);
     return 1;
 }
 
 static int test_jhn_string(void *ctx, const char *val, size_t length)
 {
+    (void)ctx;
     printf("string: '");
     fwrite(val, 1, length, stdout);
     printf("'\n");
@@ -78,6 +86,7 @@ static int test_jhn_string(void *ctx, const char *val, size_t length)
 
 static int test_jhn_map_key(void *ctx, const char *val, size_t length)
 {
+    (void)ctx;
     char * str = (char *) malloc(length + 1);
     str[length] = 0;
     memcpy(str, val, length);
@@ -88,6 +97,7 @@ static int test_jhn_map_key(void *ctx, const char *val, size_t length)
 
 static int test_jhn_start_map(void *ctx)
 {
+    (void)ctx;
     printf("map open '{'\n");
     return 1;
 }
@@ -95,18 +105,21 @@ static int test_jhn_start_map(void *ctx)
 
 static int test_jhn_end_map(void *ctx)
 {
+    (void)ctx;
     printf("map close '}'\n");
     return 1;
 }
 
 static int test_jhn_start_array(void *ctx)
 {
+    (void)ctx;
     printf("array open '['\n");
     return 1;
 }
 
 static int test_jhn_end_array(void *ctx)
 {
+    (void)ctx;
     printf("array close ']'\n");
     return 1;
 }

@@ -329,10 +329,10 @@ JHN_API char *jhn_parser_get_error(jhn_parser hand, int verbose,
    affords the client a way to get the offset into the most recent
    chunk where the error occured.  0 will be returned if no error
    was encountered. */
-JHN_API size_t jhn_get_bytes_consumed(jhn_parser hand);
+JHN_API size_t jhn_parser_get_bytes_consumed(jhn_parser hand);
 
 /* free an error returned from jhn_parser_get_error */
-JHN_API void jhn_free_error(jhn_parser hand, char *str);
+JHN_API void jhn_parser_free_error(jhn_parser hand, char *str);
 
 
 typedef enum {

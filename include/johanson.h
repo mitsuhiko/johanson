@@ -30,7 +30,7 @@ extern "C" {
 #    endif
 #  else
 #    if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 303
-#      define JHN_API __attribute__ ((visibility("default")))
+#      define JHN_API __attribute__((visibility("default")))
 #    else
 #      define JHN_API
 #    endif

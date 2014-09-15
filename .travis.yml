@@ -1,0 +1,20 @@
+language: c
+
+before_install:
+  - yes | sudo add-apt-repository ppa:codegear/release
+  - sudo apt-get update
+
+install:
+  - sudo apt-get install premake4
+
+script: make test
+
+notifications:
+  email: false
+  irc:
+    channels:
+      - "chat.freenode.net#pocoo"
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true

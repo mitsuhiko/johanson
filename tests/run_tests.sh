@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ECHO=`which echo`
 
@@ -11,6 +11,9 @@ esac
 
 TEST_BIN="$1"
 TESTPATH=`dirname $0`
+
+SUCCESS_MARKER=$'\033[32mSUCCESS\033[0m'
+FAILURE_MARKER=$'\033[31mFAILURE\033[0m'
 
 ${ECHO} "using test binary: $TEST_BIN"
 
@@ -45,16 +48,16 @@ for file in $TESTPATH/cases/*.json ; do
 
   ${ECHO} -n " test ($testName): "
   iter=1
-  success="SUCCESS"
+  success=$SUCCESS_MARKER
 
   # parse with a read buffer size ranging from 1-31 to stress stream parsing
-  while [ $iter -lt 32  ] && [ $success = "SUCCESS" ] ; do
+  while [ $iter -lt 32  ] && [ $success = $SUCCESS_MARKER ] ; do
     $TEST_BIN $allow_partials $allow_comments $allow_garbage $allow_multiple -b $iter < $file > ${file}.test  2>&1
     diff ${DIFF_FLAGS} "${file}.gold" "${file}.test" > "${file}.out"
     if [ $? -eq 0 ] ; then
       if [ $iter -eq 31 ] ; then tests_succeeded=$(( $tests_succeeded + 1 )) ; fi
     else
-      success="FAILURE"
+      success=$FAILURE_MARKER
       iter=32
       ${ECHO}
       cat ${file}.out

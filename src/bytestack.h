@@ -5,43 +5,44 @@
 
 #define JHN_BS_INC 128
 
-typedef struct jhn_bytestack_t
-{
-    unsigned char * stack;
+typedef struct jhn_bytestack_t {
+    unsigned char *stack;
     size_t size;
     size_t used;
-    jhn_alloc_funcs_t * yaf;
-} jhn_bytestack;
+    jhn_alloc_funcs_t *af;
+} jhn__bytestack_t;
 
 /* initialize a bytestack */
-#define jhn_bs_init(obs, _yaf) {               \
-        (obs).stack = NULL;                     \
-        (obs).size = 0;                         \
-        (obs).used = 0;                         \
-        (obs).yaf = (_yaf);                     \
-    }                                           \
-
+#define jhn__bs_init(obs, _yaf) do {                        \
+    (obs).stack = NULL;                                     \
+    (obs).size = 0;                                         \
+    (obs).used = 0;                                         \
+    (obs).af = (_yaf);                                      \
+} while (0)
 
 /* initialize a bytestack */
-#define jhn_bs_free(obs)                 \
-    if ((obs).stack) (obs).yaf->free_func((obs).yaf->ctx, (obs).stack);
+#define jhn__bs_free(obs) do {                              \
+    if ((obs).stack) {                                      \
+        (obs).af->free_func((obs).af->ctx, (obs).stack);    \
+    }                                                       \
+} while (0)
 
-#define jhn_bs_current(obs)               \
+#define jhn__bs_current(obs) \
     (assert((obs).used > 0), (obs).stack[(obs).used - 1])
 
-#define jhn_bs_push(obs, byte) {                       \
-    if (((obs).size - (obs).used) == 0) {               \
-        (obs).size += JHN_BS_INC;                      \
-        (obs).stack = (obs).yaf->realloc_func((obs).yaf->ctx,\
-                                         (void *) (obs).stack, (obs).size);\
-    }                                                   \
-    (obs).stack[((obs).used)++] = (byte);               \
-}
+#define jhn__bs_push(obs, byte) do {                        \
+    if (((obs).size - (obs).used) == 0) {                   \
+        (obs).size += JHN_BS_INC;                           \
+        (obs).stack = (obs).af->realloc_func((obs).af->ctx, \
+            (void *) (obs).stack, (obs).size);              \
+    }                                                       \
+    (obs).stack[((obs).used)++] = (byte);                   \
+} while (0)
 
 /* removes the top item of the stack, returns nothing */
-#define jhn_bs_pop(obs) { ((obs).used)--; }
+#define jhn__bs_pop(obs) do { ((obs).used)--; } while (0)
 
-#define jhn_bs_set(obs, byte)                          \
+#define jhn__bs_set(obs, byte)                              \
     (obs).stack[((obs).used) - 1] = (byte);
 
 

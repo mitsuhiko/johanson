@@ -91,9 +91,9 @@ jhn_gen_alloc(const jhn_alloc_funcs_t *afs)
     if (!g)
         return NULL;
 
-    memset((void *)g, 0, sizeof(struct jhn_gen_s));
+    memset(g, 0, sizeof(struct jhn_gen_s));
     /* copy in pointers to allocation routines */
-    memcpy((void *)&(g->alloc), (void *)afs, sizeof(jhn_alloc_funcs_t));
+    memcpy(&(g->alloc), afs, sizeof(jhn_alloc_funcs_t));
 
     g->print = (jhn_print_t)&jhn__buf_append;
     g->ctx = jhn__buf_alloc(&(g->alloc));
@@ -107,7 +107,7 @@ void
 jhn_gen_reset(jhn_gen_t *g, const char *sep)
 {
     g->depth = 0;
-    memset((void *) &(g->state), 0, sizeof(g->state));
+    memset(&(g->state), 0, sizeof(g->state));
     if (sep != NULL) {
         g->print(g->ctx, sep, strlen(sep));
     }

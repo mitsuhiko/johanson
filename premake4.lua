@@ -12,7 +12,7 @@ project "johanson"
 	targetname "johanson"
 	language "C"
 	kind "SharedLib"
-	flags { "No64BitChecks", "ExtraWarnings" }
+	flags { "ExtraWarnings" }
 	includedirs {
 		"include",
 	}

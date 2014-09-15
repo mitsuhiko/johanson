@@ -1,0 +1,6 @@
+/* this is ignored because the parser allows comments */
+{
+  "foo": [1, 2, 3],
+  "bar": {"baz": true, "blah": false, "muh": null},
+  "x": [24.0, 42.0]
+}

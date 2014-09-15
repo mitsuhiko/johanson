@@ -540,11 +540,7 @@ jhn_parser_alloc(const jhn_parser_callbacks *callbacks,
     jhn_alloc_funcs_t afs_buffer;
 
     /* first order of business is to set up memory allocation routines */
-    if (afs) {
-        if (!afs->malloc_func || !afs->realloc_func || !afs->free_func) {
-            return NULL;
-        }
-    } else {
+    if (!afs) {
         jhn__set_default_alloc_funcs(&afs_buffer);
         afs = &afs_buffer;
     }

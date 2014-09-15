@@ -60,7 +60,7 @@ project "tests"
 	}
 
 	files {
-		"tests/parser/runtests.c"
+		"tests/runtests.c"
 	}
 
 	links { "johanson" }

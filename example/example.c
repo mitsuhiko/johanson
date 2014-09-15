@@ -88,7 +88,7 @@ on_end_array(void *ctx)
 }
 
 
-static jhn_parser_callbacks callbacks = {
+static jhn_parser_callbacks_t callbacks = {
     on_null,
     on_bool,
     on_integer,

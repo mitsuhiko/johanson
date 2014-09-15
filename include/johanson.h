@@ -1,14 +1,5 @@
-/*
-    JOHANSON
-
-    Johanson is a fork of the popular YAJL library.  Johanson is essentially
-    a rename and cleanup of yajl that aims to expose the lexer as a primary
-    API and keep the parser for some simple situations.  It also removes the
-    tree from YAJL because the tree never followed the memory allocation
-    that was set up for YAJL.  From personal experience, libraries that want
-    to use YAJL want to have their own tree anyways.
-
-  */
+/* JOHANSON
+   -- a simple, iterative JSON library for C for easy embedding  */
 #ifndef JOHANSON_H_INCLUDED
 #define JOHANSON_H_INCLUDED
 

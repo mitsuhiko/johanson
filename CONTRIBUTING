@@ -1,0 +1,20 @@
+Contributing to Johanson
+
+  There is really not much to know about johanson for contributing.  If you
+  want to send some pull requests by my friend.  Please follow the following
+  general rules:
+
+  name external symbols ``jhn_FOO``, name internal (non static) symbols
+  ``jhn__FOO``.
+
+    Why?  Because it makes it very clear which symbols are supposed to be
+    exported and which ones not.  Do not export stuff that is clearly internal
+    or only utility.  We don't want to have an ABI that breaks by accident
+    or is unintentionally bloated.
+
+    For statics there is no reason to namespace.
+
+  Be very careful with public structs because of padding.  We do not want
+  any, the exception is the ``jhn_alloc_funcs`` which we kinda inherited
+  from YAJL where there is no clear way how to get rid of them without
+  making the API more annoying.

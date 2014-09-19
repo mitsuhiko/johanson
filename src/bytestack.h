@@ -6,10 +6,12 @@
 #define JHN_BS_INC 128
 
 typedef struct jhn_bytestack_t {
+    /* memory allocation routines.  This needs to be first in the struct
+       so that jhn_free() works! */
+    jhn_alloc_funcs_t *af;
     unsigned char *stack;
     size_t size;
     size_t used;
-    jhn_alloc_funcs_t *af;
 } jhn__bytestack_t;
 
 /* initialize a bytestack */

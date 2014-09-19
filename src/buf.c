@@ -88,6 +88,16 @@ jhn__buf_data(jhn__buf_t *buf)
     return buf->data;
 }
 
+char *
+jhn__buf_fetch_data(jhn__buf_t *buf)
+{
+    char *rv = buf->data;
+    buf->data = NULL;
+    buf->used = 0;
+    buf->len = 0;
+    return rv;
+}
+
 size_t
 jhn__buf_len(jhn__buf_t *buf)
 {

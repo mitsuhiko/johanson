@@ -32,6 +32,10 @@ typedef enum {
 } parser_state;
 
 struct jhn_parser_s {
+    /* memory allocation routines.  This needs to be first in the struct
+       so that jhn_free() works! */
+    jhn_alloc_funcs_t alloc;
+
     const jhn_parser_callbacks_t *callbacks;
     void *ctx;
     jhn_lexer_t *lexer;
@@ -44,8 +48,6 @@ struct jhn_parser_s {
     jhn__buf_t *decode_buf;
     /* a stack of states.  access with parser_state_XXX routines */
     jhn__bytestack_t state_stack;
-    /* memory allocation routines */
-    jhn_alloc_funcs_t alloc;
     /* bitfield */
     unsigned int flags;
 };
@@ -181,7 +183,7 @@ do_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 {
     jhn_tok_t tok;
     const char * buf;
-    size_t bufLen;
+    size_t buf_len;
     size_t * offset = &(hand->bytes_consumed);
 
     *offset = 0;
@@ -196,7 +198,7 @@ around_again:
         if (!(hand->flags & jhn_allow_trailing_garbage)) {
             if (*offset != length) {
                 tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                                   offset, &buf, &bufLen);
+                                   offset, &buf, &buf_len);
                 if (tok != jhn_tok_eof) {
                     jhn__bs_set(hand->state_stack, parser_state_parse_error);
                     hand->parse_error = "trailing garbage";
@@ -223,7 +225,7 @@ around_again:
         parser_state stateToPush = parser_state_start;
 
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                           offset, &buf, &bufLen);
+                           offset, &buf, &buf_len);
 
         switch (tok) {
         case jhn_tok_eof:
@@ -234,13 +236,13 @@ around_again:
         case jhn_tok_string:
             if (hand->callbacks && hand->callbacks->jhn_string) {
                 _CC_CHK(hand->callbacks->jhn_string(hand->ctx,
-                                                    buf, bufLen));
+                                                    buf, buf_len));
             }
             break;
         case jhn_tok_string_with_escapes:
             if (hand->callbacks && hand->callbacks->jhn_string) {
                 jhn__buf_clear(hand->decode_buf);
-                jhn__string_decode(hand->decode_buf, buf, bufLen);
+                jhn__string_decode(hand->decode_buf, buf, buf_len);
                 _CC_CHK(hand->callbacks->jhn_string(
                         hand->ctx, jhn__buf_data(hand->decode_buf),
                         jhn__buf_len(hand->decode_buf)));
@@ -273,18 +275,18 @@ around_again:
             if (hand->callbacks) {
                 if (hand->callbacks->jhn_number) {
                     _CC_CHK(hand->callbacks->jhn_number(
-                                hand->ctx,(const char *)buf, bufLen));
+                                hand->ctx,(const char *)buf, buf_len));
                 } else if (hand->callbacks->jhn_integer) {
                     long long int i = 0;
                     errno = 0;
-                    i = parse_integer(buf, bufLen);
+                    i = parse_integer(buf, buf_len);
                     if ((i == LLONG_MIN || i == LLONG_MAX) &&
                         errno == ERANGE) {
                         jhn__bs_set(hand->state_stack,
                                     parser_state_parse_error);
                         hand->parse_error = "integer overflow" ;
                         /* try to restore error offset */
-                        if (*offset >= bufLen) *offset -= bufLen;
+                        if (*offset >= buf_len) *offset -= buf_len;
                         else *offset = 0;
                         goto around_again;
                     }
@@ -297,11 +299,11 @@ around_again:
             if (hand->callbacks) {
                 if (hand->callbacks->jhn_number) {
                     _CC_CHK(hand->callbacks->jhn_number(
-                                hand->ctx, (const char *) buf, bufLen));
+                                hand->ctx, (const char *) buf, buf_len));
                 } else if (hand->callbacks->jhn_double) {
                     double d = 0.0;
                     jhn__buf_clear(hand->decode_buf);
-                    jhn__buf_append(hand->decode_buf, buf, bufLen);
+                    jhn__buf_append(hand->decode_buf, buf, buf_len);
                     buf = jhn__buf_data(hand->decode_buf);
                     errno = 0;
                     d = strtod((char *) buf, NULL);
@@ -313,7 +315,7 @@ around_again:
                         hand->parse_error = "numeric (floating point) "
                             "overflow";
                         /* try to restore error offset */
-                        if (*offset >= bufLen) *offset -= bufLen;
+                        if (*offset >= buf_len) *offset -= buf_len;
                         else *offset = 0;
                         goto around_again;
                     }
@@ -370,7 +372,7 @@ around_again:
          * start '}' is valid, whereas in need_key, we've parsed
          * a comma, and a string key _must_ follow */
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                           offset, &buf, &bufLen);
+                           offset, &buf, &buf_len);
         switch (tok) {
             case jhn_tok_eof:
                 return jhn_parser_status_ok;
@@ -380,15 +382,15 @@ around_again:
             case jhn_tok_string_with_escapes:
                 if (hand->callbacks && hand->callbacks->jhn_map_key) {
                     jhn__buf_clear(hand->decode_buf);
-                    jhn__string_decode(hand->decode_buf, buf, bufLen);
+                    jhn__string_decode(hand->decode_buf, buf, buf_len);
                     buf = jhn__buf_data(hand->decode_buf);
-                    bufLen = jhn__buf_len(hand->decode_buf);
+                    buf_len = jhn__buf_len(hand->decode_buf);
                 }
                 /* intentional fall-through */
             case jhn_tok_string:
                 if (hand->callbacks && hand->callbacks->jhn_map_key) {
                     _CC_CHK(hand->callbacks->jhn_map_key(hand->ctx, buf,
-                                                          bufLen));
+                                                          buf_len));
                 }
                 jhn__bs_set(hand->state_stack, parser_state_map_sep);
                 goto around_again;
@@ -411,7 +413,7 @@ around_again:
     }
     case parser_state_map_sep: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                           offset, &buf, &bufLen);
+                           offset, &buf, &buf_len);
         switch (tok) {
             case jhn_tok_colon:
                 jhn__bs_set(hand->state_stack, parser_state_map_need_val);
@@ -430,7 +432,7 @@ around_again:
     }
     case parser_state_map_got_val: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                           offset, &buf, &bufLen);
+                           offset, &buf, &buf_len);
         switch (tok) {
             case jhn_tok_right_bracket:
                 if (hand->callbacks && hand->callbacks->jhn_end_map) {
@@ -451,14 +453,14 @@ around_again:
                 hand->parse_error = "after key and value, inside map, "
                                    "I expect ',' or '}'";
                 /* try to restore error offset */
-                if (*offset >= bufLen) *offset -= bufLen;
+                if (*offset >= buf_len) *offset -= buf_len;
                 else *offset = 0;
                 goto around_again;
         }
     }
     case parser_state_array_got_val: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
-                           offset, &buf, &bufLen);
+                            offset, &buf, &buf_len);
         switch (tok) {
             case jhn_tok_right_brace:
                 if (hand->callbacks && hand->callbacks->jhn_end_array) {
@@ -645,14 +647,4 @@ size_t
 jhn_parser_get_bytes_consumed(jhn_parser_t *hand)
 {
     return hand->bytes_consumed;
-}
-
-void
-jhn_parser_free_error(jhn_parser_t *hand, char *str)
-{
-    if (hand) {
-        JO_FREE(&(hand->alloc), str);
-    } else {
-        assert(!str);
-    }
 }

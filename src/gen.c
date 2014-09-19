@@ -28,6 +28,10 @@ typedef enum {
 } jhn_gen_state;
 
 struct jhn_gen_s {
+    /* memory allocation routines.  This needs to be first in the struct
+       so that jhn_free() works! */
+    jhn_alloc_funcs_t alloc;
+
     unsigned int flags;
     unsigned int depth;
     const char *indent_string;
@@ -35,8 +39,6 @@ struct jhn_gen_s {
     jhn_gen_state state[JHN_MAX_DEPTH];
     jhn_print_t print;
     void *ctx;
-    /* memory allocation routines */
-    jhn_alloc_funcs_t alloc;
 };
 
 int

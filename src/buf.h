@@ -22,6 +22,10 @@ void jhn__buf_clear(jhn__buf_t *buf);
 /* get a pointer to the beginning of the buffer */
 const char * jhn__buf_data(jhn__buf_t *buf);
 
+/* like jhn__buf_data but releases the internal buffer pointer and
+   clears the buffer. */
+char *jhn__buf_fetch_data(jhn__buf_t *buf);
+
 /* get the length of the buffer */
 size_t jhn__buf_len(jhn__buf_t *buf);
 

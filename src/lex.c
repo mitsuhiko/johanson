@@ -1,6 +1,7 @@
 #include <johanson.h>
 
 #include "buf.h"
+#include "encode.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -50,6 +51,10 @@ tokToStr(jhn_tok_t tok)
    before pulling chars from input text */
 
 struct jhn_lexer_s {
+    /* memory allocation routines.  This needs to be first in the struct
+       so that jhn_free() works! */
+    jhn_alloc_funcs_t *alloc;
+
     /* the overal line and char offset into the data */
     size_t line_off;
     size_t char_off;
@@ -73,8 +78,6 @@ struct jhn_lexer_s {
 
     /* shall we validate utf8 inside strings? */
     unsigned int validate_utf8;
-
-    jhn_alloc_funcs_t *alloc;
 };
 
 #define read_chr(lxr, txt, off)                      \
@@ -86,8 +89,13 @@ struct jhn_lexer_s {
 
 jhn_lexer_t *
 jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
-              unsigned int allow_comments, unsigned int validate_utf8)
+                unsigned int allow_comments, unsigned int validate_utf8)
 {
+    jhn_alloc_funcs_t afs_buffer;
+    if (!alloc) {
+        jhn__set_default_alloc_funcs(&afs_buffer);
+        alloc = &afs_buffer;
+    }
     jhn_lexer_t *lxr = JO_MALLOC(alloc, sizeof(jhn_lexer_t));
     memset((void *) lxr, 0, sizeof(jhn_lexer_t));
     lxr->buf = jhn__buf_alloc(alloc);
@@ -750,4 +758,19 @@ jhn_tok_t
 jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset)
 {
     return jhn_lexer_lex(lexer, " ", 1, offset, NULL, NULL);
+}
+
+char *
+jhn_lexer_unescape(jhn_lexer_t *lexer, const char *buf,
+                   size_t buf_size, size_t *buf_size_out)
+{
+    char *rv = NULL;
+    jhn__buf_t *decode_buf = jhn__buf_alloc(lexer->alloc);
+    jhn__string_decode(decode_buf, buf, buf_size);
+    if (buf_size_out) {
+        *buf_size_out = jhn__buf_len(decode_buf);
+    }
+    rv = jhn__buf_fetch_data(decode_buf);
+    jhn__buf_free(decode_buf);
+    return rv;
 }

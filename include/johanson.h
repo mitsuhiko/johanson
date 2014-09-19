@@ -14,6 +14,10 @@
 extern "C" {
 #endif
 
+/* a marker that indicates that a struct can be used as a stand-in for
+   a jhn_alloc_funcs_t pointer */
+#define JHN_HAS_ALLOC
+
 /* Johanson is a library that is meant for embedding into all kinds of
    environments.  As a result we good care of all our external symbols.
    All public symbols are prefixed with JHN_API.  If you do not define
@@ -85,7 +89,7 @@ typedef enum {
     jhn_gen_invalid_string
 } jhn_gen_status_t;
 
-typedef struct jhn_gen_s jhn_gen_t;
+JHN_HAS_ALLOC typedef struct jhn_gen_s jhn_gen_t;
 
 /* a callback used for "printing" the results. */
 typedef void (*jhn_print_t)(void *ctx, const char *str, size_t len);
@@ -200,7 +204,7 @@ typedef enum {
    is statically allocated. */
 JHN_API const char *jhn_parser_status_to_string(jhn_parser_status_t code);
 
-typedef struct jhn_parser_s jhn_parser_t;
+JHN_HAS_ALLOC typedef struct jhn_parser_s jhn_parser_t;
 
 /* Johanson is an event driven parser.  this means as json elements are
    parsed, you are called back to do something with the data.  The
@@ -330,7 +334,7 @@ JHN_API jhn_parser_status_t jhn_parser_finish(jhn_parser_t *hand);
    the specific char.
 
    Returns A dynamically allocated string will be returned which should
-   be freed with jhn_free_error (or by using the same free function as
+   be freed with jhn_free (or by using the same free function as
    when you registered the allocators). */
 JHN_API char *jhn_parser_get_error(jhn_parser_t *hand, int verbose,
                                    const char *json_text,
@@ -348,9 +352,6 @@ JHN_API char *jhn_parser_get_error(jhn_parser_t *hand, int verbose,
    chunk where the error occured.  0 will be returned if no error
    was encountered. */
 JHN_API size_t jhn_parser_get_bytes_consumed(jhn_parser_t *hand);
-
-/* free an error returned from jhn_parser_get_error */
-JHN_API void jhn_parser_free_error(jhn_parser_t *hand, char *str);
 
 
 typedef enum {
@@ -371,7 +372,7 @@ typedef enum {
     jhn_tok_comment
 } jhn_tok_t;
 
-typedef struct jhn_lexer_s jhn_lexer_t;
+JHN_HAS_ALLOC typedef struct jhn_lexer_s jhn_lexer_t;
 
 /* allocates a lexer handle.  The allcoators can be left at NULL in which
    case the system allocator (malloc/realloc/free) functions are used. */
@@ -416,6 +417,15 @@ JHN_API jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
 JHN_API jhn_tok_t jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset);
 
 
+/* A helper function to unescape a string.  While the parser does this
+   automatically, the lexer does not.  This needs to be called on tokens
+   of type jhn_tok_string_with_escapes if the data of the string is
+   relevant.  Note that the value returned needs to be deallocated with
+   jhn_free() or the same free function as goes with the lexer. */
+JHN_API char *jhn_lexer_unescape(jhn_lexer_t *lexer, const char *buf,
+                                 size_t buf_size, size_t *buf_size_out);
+
+
 typedef enum {
     jhn_lexer_e_ok = 0,
     jhn_lexer_string_invalid_utf8,
@@ -447,6 +457,13 @@ JHN_API size_t jhn_lexer_current_line(jhn_lexer_t *lexer);
 /* get the number of chars lexed by this lexer instance since the last
    \n or \r */
 JHN_API size_t jhn_lexer_current_char(jhn_lexer_t *lexer);
+
+
+/* frees ptr with the appropriate allocation function provided through the
+   struct that is the first argument.  The allocators struct either needs
+   to be an jhn_alloc_funcs_t pointers or alternatively any of the
+   structs marked as JHN_HAS_ALLOC */
+JHN_API void jhn_free(void *allocators, void *ptr);
 
 #ifdef __cplusplus
 }

@@ -253,7 +253,7 @@ main(int argc, char ** argv)
         char *str = jhn_parser_get_error(hand, 0, file_data, rd);
         fflush(stdout);
         fprintf(stderr, "%s", str);
-        jhn_parser_free_error(hand, str);
+        jhn_free(hand, str);
     }
 
     jhn_parser_free(hand);

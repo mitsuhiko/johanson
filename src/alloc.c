@@ -3,6 +3,7 @@
 #include "alloc.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 
 static void *
@@ -33,4 +34,15 @@ jhn__set_default_alloc_funcs(jhn_alloc_funcs_t *af)
     af->free_func = internal_free;
     af->realloc_func = internal_realloc;
     af->ctx = NULL;
+}
+
+void
+jhn_free(void *allocators, void *ptr)
+{
+    jhn_alloc_funcs_t *alloc = allocators;
+    if (alloc) {
+        JO_FREE(alloc, ptr);
+    } else {
+        assert(!ptr);
+    }
 }

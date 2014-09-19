@@ -414,7 +414,7 @@ JHN_API jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
 /* indicates a finish to the lexer.  This is necessary because integers for
    instance do not have a clear end so it is necessary to instruct the lexer
    that an end has been reached. */
-JHN_API jhn_tok_t jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset);
+JHN_API jhn_tok_t jhn_lexer_finalize(jhn_lexer_t *lexer, size_t offset);
 
 
 /* A helper function to unescape a string.  While the parser does this

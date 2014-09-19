@@ -755,9 +755,13 @@ jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
 }
 
 jhn_tok_t
-jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset)
+jhn_lexer_finalize(jhn_lexer_t *lexer, size_t offset)
 {
-    return jhn_lexer_lex(lexer, " ", 1, offset, NULL, NULL);
+    /* finalizing means ending with some whitespace.  This is enough to
+       inform the regular lexing algorithm that we have found the end of
+       a token (this really is only an issue if we are lexing numbers
+       which are impossible to detect the end of otherwise. */
+    return jhn_lexer_lex(lexer, " ", 1, &offset, NULL, NULL);
 }
 
 char *

@@ -256,7 +256,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
     jhn_tok_t tok = jhn_tok_error;
     int has_escapes = 0;
 
-    for (;;) {
+    while (1) {
         char cur_chr;
 
         /* now jump into a faster scanning routine to skip as much
@@ -266,15 +266,11 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
             size_t len;
 
             if ((lexer->buf_in_use && jhn__buf_len(lexer->buf) &&
-                 lexer->buf_off < jhn__buf_len(lexer->buf)))
-            {
-                p = ((const char *)jhn__buf_data(lexer->buf) +
-                     (lexer->buf_off));
+                 lexer->buf_off < jhn__buf_len(lexer->buf))) {
+                p = jhn__buf_data(lexer->buf) + (lexer->buf_off);
                 len = jhn__buf_len(lexer->buf) - lexer->buf_off;
                 lexer->buf_off += jhn_string_scan(p, len, lexer->validate_utf8);
-            }
-            else if (*offset < length)
-            {
+            } else if (*offset < length) {
                 p = json_text + *offset;
                 len = length - *offset;
                 *offset += jhn_string_scan(p, len, lexer->validate_utf8);
@@ -300,7 +296,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
             if (cur_chr == 'u') {
                 unsigned int i = 0;
 
-                for (i=0;i<4;i++) {
+                for (i = 0; i < 4; i++) {
                     STR_CHECK_EOF;
                     cur_chr = read_chr(lexer, json_text, offset);
                     if (!(char_lookup_table[(unsigned char)cur_chr] & VHC)) {
@@ -328,7 +324,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
         /* when in validate UTF8 mode we need to do some extra work */
         else if (lexer->validate_utf8) {
             jhn_tok_t t = jhn_lexer_utf8_char(lexer, json_text, length,
-                                          offset, cur_chr);
+                                              offset, cur_chr);
 
             if (t == jhn_tok_eof) {
                 tok = jhn_tok_eof;
@@ -354,7 +350,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
 
 static jhn_tok_t
 jhn_lexer_number(jhn_lexer_t *lexer, const char * json_text,
-                size_t length, size_t * offset)
+                 size_t length, size_t * offset)
 {
     /* XXX: numbers are the only entities in json that we must lex
             _beyond_ in order to know that they are complete.  There

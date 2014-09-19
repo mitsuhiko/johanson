@@ -16,20 +16,20 @@
 #define MAX_VALUE_TO_MULTIPLY ((LLONG_MAX / 10) + (LLONG_MAX % 10))
 
 typedef enum {
-    jhn_state_start = 0,
-    jhn_state_parse_complete,
-    jhn_state_parse_error,
-    jhn_state_lexical_error,
-    jhn_state_map_start,
-    jhn_state_map_sep,
-    jhn_state_map_need_val,
-    jhn_state_map_got_val,
-    jhn_state_map_need_key,
-    jhn_state_array_start,
-    jhn_state_array_got_val,
-    jhn_state_array_need_val,
-    jhn_state_got_value,
-} jhn_state;
+    parser_state_start = 0,
+    parser_state_parse_complete,
+    parser_state_parse_error,
+    parser_state_lexical_error,
+    parser_state_map_start,
+    parser_state_map_sep,
+    parser_state_map_need_val,
+    parser_state_map_got_val,
+    parser_state_map_need_key,
+    parser_state_array_start,
+    parser_state_array_got_val,
+    parser_state_array_need_val,
+    parser_state_got_value,
+} parser_state;
 
 struct jhn_parser_s {
     const jhn_parser_callbacks_t *callbacks;
@@ -42,7 +42,7 @@ struct jhn_parser_s {
     size_t bytes_consumed;
     /* temporary storage for decoded strings */
     jhn__buf_t *decode_buf;
-    /* a stack of states.  access with jhn_state_XXX routines */
+    /* a stack of states.  access with parser_state_XXX routines */
     jhn__bytestack_t state_stack;
     /* memory allocation routines */
     jhn_alloc_funcs_t alloc;
@@ -92,10 +92,10 @@ render_error_string(jhn_parser_t *hand, const char *json_text,
     char text[72];
     const char * arrow = "                     (right here) ------^\n";
 
-    if (jhn__bs_current(hand->state_stack) == jhn_state_parse_error) {
+    if (jhn__bs_current(hand->state_stack) == parser_state_parse_error) {
         error_type = "parse";
         error_text = hand->parse_error;
-    } else if (jhn__bs_current(hand->state_stack) == jhn_state_lexical_error) {
+    } else if (jhn__bs_current(hand->state_stack) == parser_state_lexical_error) {
         error_type = "lexical";
         error_text = jhn_lexer_error_to_string(jhn_lexer_get_error(hand->lexer));
     } else {
@@ -168,7 +168,7 @@ render_error_string(jhn_parser_t *hand, const char *json_text,
 /* check for client cancelation */
 #define _CC_CHK(x) do {                                             \
     if (!(x)) {                                                     \
-        jhn__bs_set(hand->state_stack, jhn_state_parse_error);       \
+        jhn__bs_set(hand->state_stack, parser_state_parse_error);       \
         hand->parse_error =                                         \
             "client cancelled parse via callback return value";     \
         return jhn_parser_status_client_cancelled;                  \
@@ -188,9 +188,9 @@ do_parse(jhn_parser_t *hand, const char *json_text, size_t length)
 
 around_again:
     switch (jhn__bs_current(hand->state_stack)) {
-    case jhn_state_parse_complete:
+    case parser_state_parse_complete:
         if (hand->flags & jhn_allow_multiple_values) {
-            jhn__bs_set(hand->state_stack, jhn_state_got_value);
+            jhn__bs_set(hand->state_stack, parser_state_got_value);
             goto around_again;
         }
         if (!(hand->flags & jhn_allow_trailing_garbage)) {
@@ -198,21 +198,21 @@ around_again:
                 tok = jhn_lexer_lex(hand->lexer, json_text, length,
                                    offset, &buf, &bufLen);
                 if (tok != jhn_tok_eof) {
-                    jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                    jhn__bs_set(hand->state_stack, parser_state_parse_error);
                     hand->parse_error = "trailing garbage";
                 }
                 goto around_again;
             }
         }
         return jhn_parser_status_ok;
-    case jhn_state_lexical_error:
-    case jhn_state_parse_error:
+    case parser_state_lexical_error:
+    case parser_state_parse_error:
         return jhn_parser_status_error;
-    case jhn_state_start:
-    case jhn_state_got_value:
-    case jhn_state_map_need_val:
-    case jhn_state_array_need_val:
-    case jhn_state_array_start:  {
+    case parser_state_start:
+    case parser_state_got_value:
+    case parser_state_map_need_val:
+    case parser_state_array_need_val:
+    case parser_state_array_start:  {
         /* for arrays and maps, we advance the state for this
          * depth, then push the state of the next depth.
          * If an error occurs during the parsing of the nesting
@@ -220,7 +220,7 @@ around_again:
          * a state that needs pushing will be anything other
          * than state_start */
 
-        jhn_state stateToPush = jhn_state_start;
+        parser_state stateToPush = parser_state_start;
 
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
@@ -229,7 +229,7 @@ around_again:
         case jhn_tok_eof:
             return jhn_parser_status_ok;
         case jhn_tok_error:
-            jhn__bs_set(hand->state_stack, jhn_state_lexical_error);
+            jhn__bs_set(hand->state_stack, parser_state_lexical_error);
             goto around_again;
         case jhn_tok_string:
             if (hand->callbacks && hand->callbacks->jhn_string) {
@@ -261,13 +261,13 @@ around_again:
             if (hand->callbacks && hand->callbacks->jhn_start_map) {
                 _CC_CHK(hand->callbacks->jhn_start_map(hand->ctx));
             }
-            stateToPush = jhn_state_map_start;
+            stateToPush = parser_state_map_start;
             break;
         case jhn_tok_left_brace:
             if (hand->callbacks && hand->callbacks->jhn_start_array) {
                 _CC_CHK(hand->callbacks->jhn_start_array(hand->ctx));
             }
-            stateToPush = jhn_state_array_start;
+            stateToPush = parser_state_array_start;
             break;
         case jhn_tok_integer:
             if (hand->callbacks) {
@@ -281,7 +281,7 @@ around_again:
                     if ((i == LLONG_MIN || i == LLONG_MAX) &&
                         errno == ERANGE) {
                         jhn__bs_set(hand->state_stack,
-                                    jhn_state_parse_error);
+                                    parser_state_parse_error);
                         hand->parse_error = "integer overflow" ;
                         /* try to restore error offset */
                         if (*offset >= bufLen) *offset -= bufLen;
@@ -309,7 +309,7 @@ around_again:
                         errno == ERANGE)
                     {
                         jhn__bs_set(hand->state_stack,
-                                    jhn_state_parse_error);
+                                    parser_state_parse_error);
                         hand->parse_error = "numeric (floating point) "
                             "overflow";
                         /* try to restore error offset */
@@ -324,7 +324,7 @@ around_again:
             break;
         case jhn_tok_right_brace: {
             if (jhn__bs_current(hand->state_stack) ==
-                jhn_state_array_start) {
+                parser_state_array_start) {
                 if (hand->callbacks &&
                     hand->callbacks->jhn_end_array)
                 {
@@ -338,34 +338,34 @@ around_again:
         case jhn_tok_colon:
         case jhn_tok_comma:
         case jhn_tok_right_bracket:
-            jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+            jhn__bs_set(hand->state_stack, parser_state_parse_error);
             hand->parse_error =
                 "unallowed token at this point in JSON text";
             goto around_again;
         default:
-            jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+            jhn__bs_set(hand->state_stack, parser_state_parse_error);
             hand->parse_error = "invalid token, internal error";
             goto around_again;
         }
         /* got a value.  transition depends on the state we're in. */
         {
-            jhn_state s = jhn__bs_current(hand->state_stack);
-            if (s == jhn_state_start || s == jhn_state_got_value) {
-                jhn__bs_set(hand->state_stack, jhn_state_parse_complete);
-            } else if (s == jhn_state_map_need_val) {
-                jhn__bs_set(hand->state_stack, jhn_state_map_got_val);
+            parser_state s = jhn__bs_current(hand->state_stack);
+            if (s == parser_state_start || s == parser_state_got_value) {
+                jhn__bs_set(hand->state_stack, parser_state_parse_complete);
+            } else if (s == parser_state_map_need_val) {
+                jhn__bs_set(hand->state_stack, parser_state_map_got_val);
             } else {
-                jhn__bs_set(hand->state_stack, jhn_state_array_got_val);
+                jhn__bs_set(hand->state_stack, parser_state_array_got_val);
             }
         }
-        if (stateToPush != jhn_state_start) {
+        if (stateToPush != parser_state_start) {
             jhn__bs_push(hand->state_stack, stateToPush);
         }
 
         goto around_again;
     }
-    case jhn_state_map_start:
-    case jhn_state_map_need_key: {
+    case parser_state_map_start:
+    case parser_state_map_need_key: {
         /* only difference between these two states is that in
          * start '}' is valid, whereas in need_key, we've parsed
          * a comma, and a string key _must_ follow */
@@ -375,7 +375,7 @@ around_again:
             case jhn_tok_eof:
                 return jhn_parser_status_ok;
             case jhn_tok_error:
-                jhn__bs_set(hand->state_stack, jhn_state_lexical_error);
+                jhn__bs_set(hand->state_stack, parser_state_lexical_error);
                 goto around_again;
             case jhn_tok_string_with_escapes:
                 if (hand->callbacks && hand->callbacks->jhn_map_key) {
@@ -390,11 +390,11 @@ around_again:
                     _CC_CHK(hand->callbacks->jhn_map_key(hand->ctx, buf,
                                                           bufLen));
                 }
-                jhn__bs_set(hand->state_stack, jhn_state_map_sep);
+                jhn__bs_set(hand->state_stack, parser_state_map_sep);
                 goto around_again;
             case jhn_tok_right_bracket:
                 if (jhn__bs_current(hand->state_stack) ==
-                    jhn_state_map_start)
+                    parser_state_map_start)
                 {
                     if (hand->callbacks && hand->callbacks->jhn_end_map) {
                         _CC_CHK(hand->callbacks->jhn_end_map(hand->ctx));
@@ -403,32 +403,32 @@ around_again:
                     goto around_again;
                 }
             default:
-                jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                jhn__bs_set(hand->state_stack, parser_state_parse_error);
                 hand->parse_error =
                     "invalid object key (must be a string)"; 
                 goto around_again;
         }
     }
-    case jhn_state_map_sep: {
+    case parser_state_map_sep: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
             case jhn_tok_colon:
-                jhn__bs_set(hand->state_stack, jhn_state_map_need_val);
+                jhn__bs_set(hand->state_stack, parser_state_map_need_val);
                 goto around_again;
             case jhn_tok_eof:
                 return jhn_parser_status_ok;
             case jhn_tok_error:
-                jhn__bs_set(hand->state_stack, jhn_state_lexical_error);
+                jhn__bs_set(hand->state_stack, parser_state_lexical_error);
                 goto around_again;
             default:
-                jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                jhn__bs_set(hand->state_stack, parser_state_parse_error);
                 hand->parse_error = "object key and value must "
                     "be separated by a colon (':')";
                 goto around_again;
         }
     }
-    case jhn_state_map_got_val: {
+    case parser_state_map_got_val: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
@@ -439,15 +439,15 @@ around_again:
                 jhn__bs_pop(hand->state_stack);
                 goto around_again;
             case jhn_tok_comma:
-                jhn__bs_set(hand->state_stack, jhn_state_map_need_key);
+                jhn__bs_set(hand->state_stack, parser_state_map_need_key);
                 goto around_again;
             case jhn_tok_eof:
                 return jhn_parser_status_ok;
             case jhn_tok_error:
-                jhn__bs_set(hand->state_stack, jhn_state_lexical_error);
+                jhn__bs_set(hand->state_stack, parser_state_lexical_error);
                 goto around_again;
             default:
-                jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                jhn__bs_set(hand->state_stack, parser_state_parse_error);
                 hand->parse_error = "after key and value, inside map, "
                                    "I expect ',' or '}'";
                 /* try to restore error offset */
@@ -456,7 +456,7 @@ around_again:
                 goto around_again;
         }
     }
-    case jhn_state_array_got_val: {
+    case parser_state_array_got_val: {
         tok = jhn_lexer_lex(hand->lexer, json_text, length,
                            offset, &buf, &bufLen);
         switch (tok) {
@@ -467,15 +467,15 @@ around_again:
                 jhn__bs_pop(hand->state_stack);
                 goto around_again;
             case jhn_tok_comma:
-                jhn__bs_set(hand->state_stack, jhn_state_array_need_val);
+                jhn__bs_set(hand->state_stack, parser_state_array_need_val);
                 goto around_again;
             case jhn_tok_eof:
                 return jhn_parser_status_ok;
             case jhn_tok_error:
-                jhn__bs_set(hand->state_stack, jhn_state_lexical_error);
+                jhn__bs_set(hand->state_stack, parser_state_lexical_error);
                 goto around_again;
             default:
-                jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                jhn__bs_set(hand->state_stack, parser_state_parse_error);
                 hand->parse_error =
                     "after array element, I expect ',' or ']'";
                 goto around_again;
@@ -497,15 +497,15 @@ do_finish(jhn_parser_t *hand)
     }
 
     switch (jhn__bs_current(hand->state_stack)) {
-        case jhn_state_parse_error:
-        case jhn_state_lexical_error:
+        case parser_state_parse_error:
+        case parser_state_lexical_error:
             return jhn_parser_status_error;
-        case jhn_state_got_value:
-        case jhn_state_parse_complete:
+        case parser_state_got_value:
+        case parser_state_parse_complete:
             return jhn_parser_status_ok;
         default:
             if (!(hand->flags & jhn_allow_partial_values)) {
-                jhn__bs_set(hand->state_stack, jhn_state_parse_error);
+                jhn__bs_set(hand->state_stack, parser_state_parse_error);
                 hand->parse_error = "premature EOF";
                 return jhn_parser_status_error;
             }
@@ -553,7 +553,7 @@ jhn_parser_alloc(const jhn_parser_callbacks_t *callbacks,
     hand->decode_buf = jhn__buf_alloc(&(hand->alloc));
     hand->flags	= 0;
     jhn__bs_init(hand->state_stack, &(hand->alloc));
-    jhn__bs_push(hand->state_stack, jhn_state_start);
+    jhn__bs_push(hand->state_stack, parser_state_start);
 
     return hand;
 }

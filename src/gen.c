@@ -95,7 +95,7 @@ jhn_gen_alloc(const jhn_alloc_funcs_t *afs)
 
     memset(g, 0, sizeof(struct jhn_gen_s));
     /* copy in pointers to allocation routines */
-    memcpy(&(g->alloc), afs, sizeof(jhn_alloc_funcs_t));
+    g->alloc = *afs;
 
     g->print = (jhn_print_t)&jhn__buf_append;
     g->ctx = jhn__buf_alloc(&(g->alloc));

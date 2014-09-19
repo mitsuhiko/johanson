@@ -30,7 +30,7 @@
 struct jhn_lexer_s {
     /* memory allocation routines.  This needs to be first in the struct
        so that jhn_free() works! */
-    jhn_alloc_funcs_t *alloc;
+    jhn_alloc_funcs_t alloc;
 
     /* the overal line and char offset into the data */
     size_t line_off;
@@ -78,7 +78,7 @@ jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
     lxr->buf = jhn__buf_alloc(alloc);
     lxr->allow_comments = allow_comments;
     lxr->validate_utf8 = validate_utf8;
-    lxr->alloc = alloc;
+    lxr->alloc = *alloc;
     return lxr;
 }
 
@@ -86,7 +86,7 @@ void
 jhn_lexer_free(jhn_lexer_t *lxr)
 {
     jhn__buf_free(lxr->buf);
-    JO_FREE(lxr->alloc, lxr);
+    JO_FREE(&lxr->alloc, lxr);
     return;
 }
 
@@ -733,7 +733,7 @@ jhn_lexer_unescape(jhn_lexer_t *lexer, const char *buf,
                    size_t buf_size, size_t *buf_size_out)
 {
     char *rv = NULL;
-    jhn__buf_t *decode_buf = jhn__buf_alloc(lexer->alloc);
+    jhn__buf_t *decode_buf = jhn__buf_alloc(&lexer->alloc);
     jhn__string_decode(decode_buf, buf, buf_size);
     if (buf_size_out) {
         *buf_size_out = jhn__buf_len(decode_buf);

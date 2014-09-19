@@ -164,8 +164,9 @@ jhn_gen_free(jhn_gen_t *g)
     }                                                       \
 } while (0)
 
-#define INCREMENT_DEPTH \
-    if (++(g->depth) >= JHN_MAX_DEPTH) return jhn_max_depth_exceeded;
+#define INCREMENT_DEPTH do { \
+    if (++(g->depth) >= JHN_MAX_DEPTH) return jhn_max_depth_exceeded; \
+} while (0)
 
 #define DECREMENT_DEPTH do { \
     if (--(g->depth) >= JHN_MAX_DEPTH) return jhn_gen_generation_complete; \
@@ -356,8 +357,12 @@ jhn_gen_get_buf(jhn_gen_t *g, const char **buf, size_t *len)
     if (g->print != (jhn_print_t)&jhn__buf_append) {
         return jhn_gen_no_buf;
     }
-    *buf = jhn__buf_data((jhn__buf_t *)g->ctx);
-    *len = jhn__buf_len((jhn__buf_t *)g->ctx);
+    if (buf) {
+        *buf = jhn__buf_data((jhn__buf_t *)g->ctx);
+    }
+    if (len) {
+        *len = jhn__buf_len((jhn__buf_t *)g->ctx);
+    }
     return jhn_gen_status_ok;
 }
 

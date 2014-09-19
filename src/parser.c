@@ -37,8 +37,8 @@ struct jhn_parser_s {
     jhn_lexer_t *lexer;
     const char *parse_error;
     /* the number of bytes consumed from the last client buffer,
-     * in the case of an error this will be an error offset, in the
-     * case of an error this can be used as the error offset */
+       in the case of an error this will be an error offset, in the
+       case of an error this can be used as the error offset */
     size_t bytes_consumed;
     /* temporary storage for decoded strings */
     jhn__buf_t *decode_buf;
@@ -279,8 +279,7 @@ around_again:
                     errno = 0;
                     i = parse_integer(buf, bufLen);
                     if ((i == LLONG_MIN || i == LLONG_MAX) &&
-                        errno == ERANGE)
-                    {
+                        errno == ERANGE) {
                         jhn__bs_set(hand->state_stack,
                                     jhn_state_parse_error);
                         hand->parse_error = "integer overflow" ;
@@ -325,8 +324,7 @@ around_again:
             break;
         case jhn_tok_right_brace: {
             if (jhn__bs_current(hand->state_stack) ==
-                jhn_state_array_start)
-            {
+                jhn_state_array_start) {
                 if (hand->callbacks &&
                     hand->callbacks->jhn_end_array)
                 {
@@ -498,8 +496,7 @@ do_finish(jhn_parser_t *hand)
         return stat;
     }
 
-    switch(jhn__bs_current(hand->state_stack))
-    {
+    switch (jhn__bs_current(hand->state_stack)) {
         case jhn_state_parse_error:
         case jhn_state_lexical_error:
             return jhn_parser_status_error;
@@ -507,8 +504,7 @@ do_finish(jhn_parser_t *hand)
         case jhn_state_parse_complete:
             return jhn_parser_status_ok;
         default:
-            if (!(hand->flags & jhn_allow_partial_values))
-            {
+            if (!(hand->flags & jhn_allow_partial_values)) {
                 jhn__bs_set(hand->state_stack, jhn_state_parse_error);
                 hand->parse_error = "premature EOF";
                 return jhn_parser_status_error;
@@ -624,11 +620,11 @@ jhn_parser_status_t
 jhn_parser_finish(jhn_parser_t *hand)
 {
     /* The lexer is lazy allocated in the first call to parse.  if parse is
-     * never called, then no data was provided to parse at all.  This is a
-     * "premature EOF" error unless jhn_allow_partial_values is specified.
-     * allocating the lexer now is the simplest possible way to handle this
-     * case while preserving all the other semantics of the parser
-     * (multiple values, partial values, etc). */
+       never called, then no data was provided to parse at all.  This is a
+       "premature EOF" error unless jhn_allow_partial_values is specified.
+       allocating the lexer now is the simplest possible way to handle this
+       case while preserving all the other semantics of the parser
+       (multiple values, partial values, etc). */
     if (hand->lexer == NULL) {
         hand->lexer = jhn_lexer_alloc(&(hand->alloc),
                                       hand->flags & jhn_allow_comments,
@@ -648,13 +644,15 @@ jhn_parser_get_error(jhn_parser_t *hand, int verbose,
 size_t
 jhn_parser_get_bytes_consumed(jhn_parser_t *hand)
 {
-    if (!hand)
-        return 0;
     return hand->bytes_consumed;
 }
 
 void
 jhn_parser_free_error(jhn_parser_t *hand, char *str)
 {
-    JO_FREE(&(hand->alloc), str);
+    if (hand) {
+        JO_FREE(&(hand->alloc), str);
+    } else {
+        assert(!str);
+    }
 }

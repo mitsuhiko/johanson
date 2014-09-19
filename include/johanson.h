@@ -14,10 +14,6 @@
 extern "C" {
 #endif
 
-/* a marker that indicates that a struct can be used as a stand-in for
-   a jhn_alloc_funcs_t pointer */
-#define JHN_HAS_ALLOC
-
 /* Johanson is a library that is meant for embedding into all kinds of
    environments.  As a result we good care of all our external symbols.
    All public symbols are prefixed with JHN_API.  If you do not define
@@ -44,6 +40,10 @@ extern "C" {
 #    endif
 #  endif
 #endif
+
+/* a marker that indicates that a struct can be used as a stand-in for
+   a jhn_alloc_funcs_t pointer.  For more information see jhn_free() */
+#define JHN_HAS_ALLOC
 
 /* pointer to a malloc/free/realloc functions, supporting client overriding
    memory allocation routines.  The ctx pointer passed to all functions is
@@ -421,7 +421,11 @@ JHN_API jhn_tok_t jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset);
    automatically, the lexer does not.  This needs to be called on tokens
    of type jhn_tok_string_with_escapes if the data of the string is
    relevant.  Note that the value returned needs to be deallocated with
-   jhn_free() or the same free function as goes with the lexer. */
+   jhn_free() or the same free function as goes with the lexer.
+
+   Optionally buf_size_out can be the pointer to a variable that will
+   hold the length of the returned string.  This is useful if the decoded
+   string might include nullbytes. */
 JHN_API char *jhn_lexer_unescape(jhn_lexer_t *lexer, const char *buf,
                                  size_t buf_size, size_t *buf_size_out);
 

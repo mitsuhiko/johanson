@@ -8,29 +8,6 @@
 #include <assert.h>
 #include <string.h>
 
-#ifdef JHN_LEXER_DEBUG
-static const char *
-tokToStr(jhn_tok_t tok)
-{
-    switch (tok) {
-    case jhn_tok_bool: return "bool";
-    case jhn_tok_colon: return "colon";
-    case jhn_tok_comma: return "comma";
-    case jhn_tok_eof: return "eof";
-    case jhn_tok_error: return "error";
-    case jhn_tok_left_brace: return "brace";
-    case jhn_tok_left_bracket: return "bracket";
-    case jhn_tok_null: return "null";
-    case jhn_tok_integer: return "integer";
-    case jhn_tok_double: return "double";
-    case jhn_tok_right_brace: return "brace";
-    case jhn_tok_right_bracket: return "bracket";
-    case jhn_tok_string: return "string";
-    case jhn_tok_string_with_escapes: return "string_with_escapes";
-    }
-    return "unknown";
-}
-#endif
 
 /* Impact of the stream parsing feature on the lexer:
 
@@ -657,19 +634,6 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
         report_len -= 2;
     }
 
-
-#ifdef JHN_LEXER_DEBUG
-    if (tok == jhn_tok_error) {
-        printf("lexical error: %s\n",
-               jhn_lexer_error_to_string(jhn_lexer_get_error(lexer)));
-    } else if (tok == jhn_tok_eof) {
-        printf("EOF hit\n");
-    } else {
-        printf("lexed %s: '", tokToStr(tok));
-        fwrite(report_buf, 1, report_len, stdout);
-        printf("'\n");
-    }
-#endif
 
     if (out_buf) {
         *out_buf = report_buf;

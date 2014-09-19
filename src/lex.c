@@ -106,12 +106,12 @@ jhn_lexer_free(jhn_lexer_t *lxr)
 }
 
 /* a lookup table which lets us quickly determine three things:
- * VEC - valid escaped control char
- * note.  the solidus '/' may be escaped or not.
- * IJC - invalid json char
- * VHC - valid hex char
- * NFP - needs further processing (from a string scanning perspective)
- * NUC - needs utf8 checking when enabled (from a string scanning perspective)
+   VEC - valid escaped control char
+   note.  the solidus '/' may be escaped or not.
+   IJC - invalid json char
+   VHC - valid hex char
+   NFP - needs further processing (from a string scanning perspective)
+   NUC - needs utf8 checking when enabled (from a string scanning perspective)
  */
 #define VEC 0x01
 #define IJC 0x02
@@ -162,23 +162,23 @@ static const char char_lookup_table[256] =
        NUC    , NUC    , NUC    , NUC    , NUC    , NUC    , NUC    , NUC
 };
 
-/** process a variable length utf8 encoded codepoint.
- *
- *  returns:
- *    jhn_tok_string - if valid utf8 char was parsed and offset was
- *                      advanced
- *    jhn_tok_eof - if end of input was hit before validation could
- *                   complete
- *    jhn_tok_error - if invalid utf8 was encountered
- *
- *  NOTE: on error the offset will point to the first char of the
- *  invalid utf8 */
+/* process a variable length utf8 encoded codepoint.
+  
+    returns:
+      jhn_tok_string - if valid utf8 char was parsed and offset was
+                        advanced
+      jhn_tok_eof - if end of input was hit before validation could
+                     complete
+      jhn_tok_error - if invalid utf8 was encountered
+  
+    NOTE: on error the offset will point to the first char of the
+    invalid utf-8 */
 #define UTF8_CHECK_EOF if (*offset >= length) { return jhn_tok_eof; }
 
 static jhn_tok_t
 jhn_lexer_utf8_char(jhn_lexer_t *lexer, const char *json_text,
-                  size_t length, size_t *offset,
-                  char chr)
+                    size_t length, size_t *offset,
+                    char chr)
 {
     unsigned char cur_chr = (unsigned char)chr;
 
@@ -251,10 +251,10 @@ jhn_string_scan(const char * buf, size_t len, int utf8check)
 
 static jhn_tok_t
 jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
-                size_t length, size_t * offset)
+                 size_t length, size_t * offset)
 {
     jhn_tok_t tok = jhn_tok_error;
-    int hasEscapes = 0;
+    int has_escapes = 0;
 
     for (;;) {
         char cur_chr;
@@ -292,7 +292,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
         }
         /* backslash escapes a set of control chars, */
         else if (cur_chr == '\\') {
-            hasEscapes = 1;
+            has_escapes = 1;
             STR_CHECK_EOF;
 
             /* special case \u */
@@ -343,7 +343,7 @@ jhn_lexer_string(jhn_lexer_t *lexer, const char * json_text,
   finish_string_lex:
     /* tell our buddy, the parser, wether he needs to process this string
      * again */
-    if (hasEscapes && tok == jhn_tok_string) {
+    if (has_escapes && tok == jhn_tok_string) {
         tok = jhn_tok_string_with_escapes;
     }
 
@@ -482,15 +482,14 @@ jhn_lexer_comment(jhn_lexer_t *lexer, const char *json_text,
 
 jhn_tok_t
 jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
-             size_t length, size_t *offset,
-             const char **out_buf, size_t *out_len)
+              size_t length, size_t *offset,
+              const char **out_buf, size_t *out_len)
 {
     jhn_tok_t tok = jhn_tok_error;
     char c;
     size_t start_off = *offset;
-
-    *out_buf = NULL;
-    *out_len = 0;
+    const char *report_buf = NULL;
+    size_t report_len = 0;
 
     for (;;) {
         assert(*offset <= length);
@@ -608,7 +607,7 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
                  '*' or '/') (tok_error)
                - eof hit. (tok_eof) */
             tok = jhn_lexer_comment(lexer, (const char *)json_text,
-                                  length, offset);
+                                    length, offset);
             if (tok == jhn_tok_comment) {
                 /* "error" is silly, but that's the initial
                  * state of tok.  guilty until proven innocent. */
@@ -638,21 +637,20 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
         lexer->buf_off = 0;
 
         if (tok != jhn_tok_eof) {
-            *out_buf = jhn__buf_data(lexer->buf);
-            *out_len = jhn__buf_len(lexer->buf);
+            report_buf = jhn__buf_data(lexer->buf);
+            report_len = jhn__buf_len(lexer->buf);
             lexer->buf_in_use = 0;
         }
     } else if (tok != jhn_tok_error) {
-        *out_buf = json_text + start_off;
-        *out_len = *offset - start_off;
+        report_buf = json_text + start_off;
+        report_len = *offset - start_off;
     }
 
     /* special case for strings. skip the quotes. */
-    if (tok == jhn_tok_string || tok == jhn_tok_string_with_escapes)
-    {
-        assert(*out_len >= 2);
-        (*out_buf)++;
-        *out_len -= 2;
+    if (tok == jhn_tok_string || tok == jhn_tok_string_with_escapes) {
+        assert(report_len >= 2);
+        report_buf++;
+        report_len -= 2;
     }
 
 
@@ -664,10 +662,17 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
         printf("EOF hit\n");
     } else {
         printf("lexed %s: '", tokToStr(tok));
-        fwrite(*out_buf, 1, *out_len, stdout);
+        fwrite(report_buf, 1, report_len, stdout);
         printf("'\n");
     }
 #endif
+
+    if (out_buf) {
+        *out_buf = report_buf;
+    }
+    if (out_len) {
+        *out_len = report_len;
+    }
 
     return tok;
 }
@@ -730,7 +735,7 @@ jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
 {
     const char *out_buf;
     size_t out_len;
-    size_t bufLen = jhn__buf_len(lexer->buf);
+    size_t buf_len = jhn__buf_len(lexer->buf);
     size_t buf_off = lexer->buf_off;
     unsigned int buf_in_use = lexer->buf_in_use;
     jhn_tok_t tok;
@@ -740,7 +745,13 @@ jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
 
     lexer->buf_off = buf_off;
     lexer->buf_in_use = buf_in_use;
-    jhn__buf_truncate(lexer->buf, bufLen);
+    jhn__buf_truncate(lexer->buf, buf_len);
 
     return tok;
+}
+
+jhn_tok_t
+jhn_lexer_finalize(jhn_lexer_t *lexer, size_t *offset)
+{
+    return jhn_lexer_lex(lexer, " ", 1, offset, NULL, NULL);
 }

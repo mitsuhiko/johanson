@@ -32,23 +32,22 @@ tokToStr(jhn_tok_t tok)
 #endif
 
 /* Impact of the stream parsing feature on the lexer:
- *
- * JHN support stream parsing.  That is, the ability to parse the first
- * bits of a chunk of JSON before the last bits are available (still on
- * the network or disk).  This makes the lexer more complex.  The
- * responsibility of the lexer is to handle transparently the case where
- * a chunk boundary falls in the middle of a token.  This is
- * accomplished is via a buffer and a character reading abstraction.
- *
- * Overview of implementation
- *
- * When we lex to end of input string before end of token is hit, we
- * copy all of the input text composing the token into our lexBuf.
- *
- * Every time we read a character, we do so through the read_chr function.
- * read_chr's responsibility is to handle pulling all chars from the buffer
- * before pulling chars from input text
- */
+
+   JHN support stream parsing.  That is, the ability to parse the first
+   bits of a chunk of JSON before the last bits are available (still on
+   the network or disk).  This makes the lexer more complex.  The
+   responsibility of the lexer is to handle transparently the case where
+   a chunk boundary falls in the middle of a token.  This is
+   accomplished is via a buffer and a character reading abstraction.
+
+   Overview of implementation
+
+   When we lex to end of input string before end of token is hit, we
+   copy all of the input text composing the token into our lexBuf.
+
+   Every time we read a character, we do so through the read_chr function.
+   read_chr's responsibility is to handle pulling all chars from the buffer
+   before pulling chars from input text */
 
 struct jhn_lexer_s {
     /* the overal line and char offset into the data */
@@ -59,11 +58,11 @@ struct jhn_lexer_s {
     jhn_lexer_error_t error;
 
     /* a input buffer to handle the case where a token is spread over
-     * multiple chunks */
+       multiple chunks */
     jhn__buf_t *buf;
 
     /* in the case where we have data in the lexBuf, buf_off holds
-     * the current offset into the lexBuf. */
+       the current offset into the lexBuf. */
     size_t buf_off;
 
     /* are we using the lex buf? */
@@ -526,7 +525,7 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
             start_off++;
             break;
         case 't': {
-            const char * want = "rue";
+            const char *want = "rue";
             do {
                 if (*offset >= length) {
                     tok = jhn_tok_eof;
@@ -544,7 +543,7 @@ jhn_lexer_lex(jhn_lexer_t *lexer, const char *json_text,
             goto lexed;
         }
         case 'f': {
-            const char * want = "alse";
+            const char *want = "alse";
             do {
                 if (*offset >= length) {
                     tok = jhn_tok_eof;
@@ -727,7 +726,7 @@ size_t jhn_lexer_current_char(jhn_lexer_t *lexer)
 }
 
 jhn_tok_t jhn_lexer_peek(jhn_lexer_t *lexer, const char *json_text,
-                       size_t length, size_t offset)
+                         size_t length, size_t offset)
 {
     const char *out_buf;
     size_t out_len;

@@ -69,11 +69,12 @@ jhn_lexer_alloc(jhn_alloc_funcs_t *alloc,
                 unsigned int allow_comments, unsigned int validate_utf8)
 {
     jhn_alloc_funcs_t afs_buffer;
+    jhn_lexer_t *lxr;
     if (!alloc) {
         jhn__set_default_alloc_funcs(&afs_buffer);
         alloc = &afs_buffer;
     }
-    jhn_lexer_t *lxr = JO_MALLOC(alloc, sizeof(jhn_lexer_t));
+    lxr = JO_MALLOC(alloc, sizeof(jhn_lexer_t));
     memset((void *) lxr, 0, sizeof(jhn_lexer_t));
     lxr->buf = jhn__buf_alloc(alloc);
     lxr->allow_comments = allow_comments;

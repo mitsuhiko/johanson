@@ -6,8 +6,8 @@ endif
 all: test
 
 test: tests
-	$(EXPORTS) ./run_tests.sh ./tests-debug
-	$(EXPORTS) ./run_tests.sh ./tests-release
+	$(EXPORTS) ./run_parsing_tests.sh ./parsing-tests-debug
+	$(EXPORTS) ./run_parsing_tests.sh ./parsing-tests-release
 
 solutions/Makefile:
 	premake4 gmake
@@ -19,8 +19,15 @@ tests: solutions/Makefile
 clean:
 	@rm -rf solutions
 	@rm -rf obj
-	@rm -f tests-debug tests-release
-	@rm -f cases/*.out
-	@rm -f cases/*.test
+	@rm -f parsing-tests-debug parsing-tests-release
+	@rm -f parsing-cases/*.out
+	@rm -f parsing-cases/*.test
+
+.venv:
+	virtualenv .venv
+	.venv/bin/pip install cffi pytest
+
+api-test: .venv
+	.venv/bin/py.test --verbose --tb=short api-tests
 
 .PHONY: tests test clean all

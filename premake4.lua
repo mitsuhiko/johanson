@@ -42,37 +42,11 @@ project "johanson"
 		defines { "_CRT_SECURE_NO_WARNINGS" }
 
 	-- build path settings for all possible configurations
-	for _, cfg in ipairs(configurations()) do
-		for _, plat in ipairs(platforms()) do
-			configuration { cfg, plat }
-				targetdir("build/" .. cfg:lower() .. "/" .. plat:lower())
-				objdir("build/objects/" .. cfg:lower() .. "/" .. plat:lower())
-			end
-		end
-
-project "tests"
-	targetname "tests"
-	language "C"
-	kind "ConsoleApp"
-	flags { "ExtraWarnings" }
-	includedirs {
-		"include"
-	}
-
-	files {
-		"tests/runtests.c"
-	}
-
-	links { "johanson" }
-
-	-- build path settings for all possible configurations
-	for _, cfg in ipairs(configurations()) do
-		for _, plat in ipairs(platforms()) do
-			configuration { cfg, plat }
-				targetdir("build/tests/" .. cfg:lower() .. "/" .. plat:lower())
-				objdir("build/tests/objects/" .. cfg:lower() .. "/" .. plat:lower())
-			end
-		end
+	for _, plat in ipairs(platforms()) do
+		configuration { cfg, plat }
+			targetdir("build/" .. plat:lower())
+			objdir("build/objects/" .. plat:lower())
+	end
 
 newoption {
 	trigger = "to",

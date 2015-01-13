@@ -1,5 +1,8 @@
+.venv
 tests-debug
 tests-release
+parsing-tests-debug
+parsing-tests-release
 solutions
 *.out
 *.test

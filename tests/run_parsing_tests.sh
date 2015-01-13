@@ -22,7 +22,7 @@ test_bin_name=`basename $TEST_BIN`
 tests_succeeded=0
 tests_total=0
 
-for file in $TESTPATH/cases/*.json ; do
+for file in $TESTPATH/parsing-cases/*.json ; do
   allow_comments=""
   allow_garbage=""
   allow_multiple=""

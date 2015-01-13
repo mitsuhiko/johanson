@@ -3,7 +3,7 @@ solution "johanson-tests"
 	location ( "solutions" )
 	platforms { "native" }
 
-project "tests"
+project "parsing-tests"
 	language "C"
 	kind "ConsoleApp"
 	flags { "ExtraWarnings" }
@@ -12,7 +12,7 @@ project "tests"
 	}
 
 	files {
-		"runtests.c",
+		"run-parsing-tests.c",
 	}
 
 	-- IDE specific configuration
@@ -20,10 +20,10 @@ project "tests"
 		defines { "_CRT_SECURE_NO_WARNINGS" }
 
 	configuration { "debug", "native" }
-		targetname "tests-debug"
+		targetname "parsing-tests-debug"
 		links { "johanson-d" }
-		libdirs { "../build/debug/native" }
+		libdirs { "../build/native" }
 	configuration { "release", "native" }
-		targetname "tests-release"
+		targetname "parsing-tests-release"
 		links { "johanson" }
-		libdirs { "../build/release/native" }
+		libdirs { "../build/native" }

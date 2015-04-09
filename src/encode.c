@@ -1,5 +1,10 @@
 #include <johanson.h>
 
+/* ignore "conditional expression is constant" caused by macros here */
+#ifdef _MSC_VER                                                                 
+#   pragma warning(disable : 4127)
+#endif                                                                          
+
 #include "encode.h"
 
 #include <assert.h>

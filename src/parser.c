@@ -55,7 +55,7 @@ struct jhn_parser_s {
 
 /* same semantics as strtol */
 static long long
-parse_integer(const char *number, unsigned int length)
+parse_integer(const char *number, size_t length)
 {
     long long ret  = 0;
     long sign = 1;

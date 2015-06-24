@@ -169,7 +169,7 @@ jhn__string_decode(jhn__buf_t *buf, const char *str, size_t len)
                 break;
             }
             default:
-                assert("this should never happen" == NULL);
+                assert(!"this should never happen");
             }
             jhn__buf_append(buf, unescaped, unescaped_len);
             beg = ++end;

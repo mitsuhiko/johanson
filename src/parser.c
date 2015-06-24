@@ -64,7 +64,7 @@ parse_integer(const char *number, unsigned int length)
     if (*pos == '+') { pos++; }
 
     while (pos < number + length) {
-        if ( ret > MAX_VALUE_TO_MULTIPLY ) {
+        if (ret > MAX_VALUE_TO_MULTIPLY) {
             errno = ERANGE;
             return sign == 1 ? LLONG_MAX : LLONG_MIN;
         }

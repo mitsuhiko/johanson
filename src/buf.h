@@ -1,7 +1,7 @@
 #ifndef JHN_BUF_H_INCLUDED
 #define JHN_BUF_H_INCLUDED
 
-#include <johanson.h>
+#include "common.h"
 
 #include "alloc.h"
 

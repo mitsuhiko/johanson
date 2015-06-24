@@ -1,7 +1,7 @@
 #ifndef JHN_BYTESTACK_H_INCLUDED
 #define JHN_BYTESTACK_H_INCLUDED
 
-#include "johanson.h"
+#include "common.h"
 
 #define JHN_BS_INC 128
 

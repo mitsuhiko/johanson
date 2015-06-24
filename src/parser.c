@@ -1,5 +1,4 @@
-#include <johanson.h>
-
+#include "common.h"
 #include "encode.h"
 #include "bytestack.h"
 

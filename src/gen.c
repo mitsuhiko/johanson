@@ -1,4 +1,4 @@
-#include <johanson.h>
+#include "common.h"
 
 /* ignore "conditional expression is constant" caused by macros here */
 #ifdef _MSC_VER                                                                 

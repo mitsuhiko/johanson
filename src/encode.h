@@ -1,7 +1,7 @@
 #ifndef JHN_ENCODE_H_INCLUDED
 #define JHN_ENCODE_H_INCLUDED
 
-#include <johanson.h>
+#include "common.h"
 
 #include "buf.h"
 

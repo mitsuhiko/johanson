@@ -1,7 +1,7 @@
 #ifndef JHN_ALLOC_H_INCLUDED
 #define JHN_ALLOC_H_INCLUDED
 
-#include "johanson.h"
+#include "common.h"
 
 #define JO_MALLOC(afs, sz) (afs)->malloc_func((afs)->ctx, (sz))
 #define JO_FREE(afs, ptr) (afs)->free_func((afs)->ctx, (ptr))

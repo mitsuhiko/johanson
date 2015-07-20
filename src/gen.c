@@ -219,9 +219,13 @@ jhn_gen_integer(jhn_gen_t *g, long long int number)
 }
 
 #if defined(_WIN32) || defined(WIN32)
-#include <float.h>
-#define isnan _isnan
-#define isinf !_finite
+#   include <float.h>
+#   ifndef isnan
+#       define isnan _isnan
+#   endif
+#   ifndef isinf
+#       define isinf !_finite
+#   endif
 #endif
 
 jhn_gen_status_t
